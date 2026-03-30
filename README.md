@@ -1,3 +1,12 @@
+---
+title: GitPulse Intelligence
+emoji: 🐙
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # 🧠 GitPulse: GitHub Talent Finder (Pro)
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
