@@ -9,6 +9,8 @@ pinned: false
 
 # 🧠 GitPulse: GitHub Talent Finder (Pro)
 
+🚀 **Live Demo**: [https://huggingface.co/spaces/Divya499/GitPulse-Intelligence](https://huggingface.co/spaces/Divya499/GitPulse-Intelligence)
+
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Gemini AI](https://img.shields.io/badge/Gemini--AI-4285F4?style=for-the-badge&logo=google-cloud)](https://aistudio.google.com/)
 
