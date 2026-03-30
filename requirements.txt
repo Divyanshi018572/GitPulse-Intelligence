@@ -1,0 +1,12 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+httpx==0.25.1
+jinja2==3.1.2
+python-dotenv==1.0.0
+openpyxl==3.1.2
+google-genai>=1.0.0
+reportlab>=4.0.0
+orjson>=3.9.0
+diskcache>=5.6.0
+groq>=0.5.0
+uvicorn[standard]==0.24.0

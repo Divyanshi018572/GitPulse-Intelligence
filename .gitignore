@@ -1,0 +1,32 @@
+# 🚨 SECURITY: Critical Environment Variables
+.env
+.env.local
+
+# ⚡ Performance: Local AI Cache
+.local_cache/
+
+# 🐍 Python Specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# 🐳 Infrustructure
+.docker_cache/
+
+# 📂 OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 📊 Data Exports
+*.xlsx
+*.csv
+!template.csv

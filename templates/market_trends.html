@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GitPulse: Live Market Trends — GitHub Talent Finder</title>
+  <meta name="description" content="Live GitHub market trends — see which tech stacks are exploding in popularity with real repository counts."/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:#0a0a0f; --surface:#0e0e13; --surface2:#16161d;
+      --border:#1c1c24; --border2:#2d2d39;
+      --text:#f0f0f5; --text-muted:#9494a1;
+      --accent:#58a6ff; --accent2:#1f6feb; --accent-bg:rgba(88,166,255,0.1);
+      --secondary:#9d8fff; --secondary-bg:rgba(157,143,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.5);
+      --grid-line:rgba(255,255,255,0.05);
+    }
+    :root[data-theme="light"] {
+      --bg:#f8f9fc; --surface:#ffffff; --surface2:#f1f4f9;
+      --border:#e1e4e8; --border2:#d1d5da;
+      --text:#1a1a2e; --text-muted:#6a737d;
+      --accent:#0969da; --accent2:#0550ae; --accent-bg:rgba(9,105,218,0.05);
+      --secondary:#6f42c1; --secondary-bg:rgba(111,66,193,0.05);
+      --shadow:0 8px 24px rgba(149,157,165,0.12);
+      --grid-line:rgba(0,0,0,0.06);
+    }
+    :root[data-theme="navy"] {
+      --bg:#0b1121; --surface:#111a2f; --surface2:#1d2943;
+      --border:#1e2d4d; --border2:#2a3b5e;
+      --text:#e6edf3; --text-muted:#8b9eb0;
+      --accent:#64ffda; --accent2:#0a85d9; --accent-bg:rgba(100,255,218,0.1);
+      --secondary:#70a1ff; --secondary-bg:rgba(112,161,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.6);
+      --grid-line:rgba(255,255,255,0.05);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:all 0.3s;}
+    h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;}
+
+    /* PROGRESS BAR */
+    .progress-bar{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));z-index:9999;display:none;}
+    .progress-bar.loading{display:block;animation:progress 1.5s ease-in-out infinite;}
+    @keyframes progress{0%{transform:scaleX(0);transform-origin:left;}50%{transform:scaleX(0.6);transform-origin:left;}100%{transform:scaleX(1);transform-origin:left;opacity:0;}}
+
+    /* HEADER */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:var(--shadow/2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
+    .logo-text{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);}
+    .header-right{display:flex;align-items:center;gap:8px;}
+    .btn-back{padding:7px 16px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+    .btn-back:hover{border-color:var(--accent);color:var(--accent);}
+    .theme-switcher{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:3px;}
+    .theme-pill{padding:4px 10px;border-radius:14px;border:none;background:transparent;color:var(--text-muted);font-size:10px;font-family:'Space Mono',monospace;cursor:pointer;transition:all 0.2s;}
+    .theme-pill.active{background:var(--accent2);color:#fff;}
+    .theme-pill:not(.active):hover{color:var(--accent);}
+
+    /* NAV */
+    .nav-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;overflow-x:auto;}
+    .nav-tab{padding:12px 18px;border:none;background:transparent;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;letter-spacing:0.05em;text-decoration:none;display:flex;align-items:center;gap:5px;}
+    .nav-tab:hover{color:var(--accent);}
+    .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+    /* PAGE HERO */
+    .page-hero{text-align:center;padding:48px 20px 32px;max-width:720px;margin:0 auto;}
+    .page-hero-icon{font-size:52px;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px var(--accent-bg));}
+    .page-hero h1{font-size:32px;font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,var(--accent) 30%,var(--green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .page-hero p{font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:300;}
+
+    /* CONTROLS */
+    .controls{display:flex;align-items:center;justify-content:center;gap:12px;padding:0 20px 32px;flex-wrap:wrap;}
+    .btn-refresh{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:linear-gradient(90deg,var(--accent2),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.04em;box-shadow:0 4px 15px var(--accent-bg);}
+    .btn-refresh:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px var(--accent-bg);opacity:0.9;}
+    .btn-refresh:disabled{opacity:0.5;cursor:not-allowed;}
+    .last-updated{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);background:var(--surface2);padding:6px 14px;border-radius:9999px;border:1px solid var(--border);}
+
+    /* MAIN */
+    main{padding-bottom:100px; max-width:1100px;margin:0 auto;padding:0 20px 80px;}
+
+    /* STAT ROW */
+    .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:32px;}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);animation:fadeUp 0.5s ease both;position:relative;overflow:hidden;}
+    .stat-card:hover{border-color:var(--accent);transform:translateY(-4px);background:var(--accent-bg);}
+    .stat-card::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle at top right, var(--accent-bg), transparent);opacity:0.5;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+    .stat-icon{font-size:32px;flex-shrink:0;position:relative;z-index:2;}
+    .stat-content{position:relative;z-index:2;}
+    .stat-value{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);line-height:1.1;margin-bottom:4px;}
+    .stat-label{font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;}
+
+    /* CHART GRID */
+    .chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-bottom:24px;}
+    @media(max-width:760px){.chart-grid{grid-template-columns:1fr;}}
+    .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px;box-shadow:var(--shadow);animation:fadeUp 0.5s ease both;position:relative;overflow:hidden;}
+    .chart-card-full{grid-column:1/-1;}
+    .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;}
+    .chart-title{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;}
+    .chart-subtitle{font-size:13px;color:var(--text-muted);margin-top:6px;font-weight:300;}
+    .chart-badge{padding:4px 12px;border-radius:9999px;background:var(--accent-bg);border:1px solid var(--accent);font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.05em;font-weight:700;}
+    .chart-wrap{position:relative;height:280px;}
+    .chart-wrap-sm{position:relative;height:240px;}
+
+    /* LEADER TABLE */
+    .leader-table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:4px;}
+    .leader-table th{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.12em;padding:12px 16px;text-align:left;text-transform:uppercase;font-weight:700;}
+    .leader-table td{padding:16px;font-size:14px;background:var(--surface2);vertical-align:middle;transition:all 0.2s;}
+    .leader-table td:first-child{border-radius:12px 0 0 12px;border-left:1px solid var(--border);}
+    .leader-table td:last-child{border-radius:0 12px 12px 0;border-right:1px solid var(--border);}
+    .leader-table tr:hover td{background:var(--accent-bg);border-color:var(--accent);color:var(--text);}
+    .rank-medal{font-size:18px;width:32px;display:inline-block;text-align:center;filter:drop-shadow(0 0 5px rgba(0,0,0,0.2));}
+    .bar-cell{display:flex;align-items:center;gap:12px;}
+    .bar-container{flex:1;height:8px;background:var(--bg);border-radius:9999px;overflow:hidden;border:1px solid var(--border);}
+    .bar-fill{height:100%;border-radius:9999px;transition:width 1s cubic-bezier(0.4, 0, 0.2, 1);background:linear-gradient(90deg, var(--accent2), var(--accent));}
+    .bar-text{font-family:'Space Mono',monospace;font-size:12px;color:var(--accent);flex-shrink:0;min-width:64px;text-align:right;font-weight:700;}
+
+    /* SPINNER */
+    .spinner-inline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:80px 20px;font-family:'Space Mono',monospace;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spin-circle{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+
+    /* ERROR */
+    .error-state{text-align:center;padding:80px 24px;background:rgba(248,81,73,0.05);border-radius:24px;border:1px solid rgba(248,81,73,0.2);margin:20px;}
+    .error-state .err-icon{font-size:52px;margin-bottom:20px;opacity:0.8;}
+    .error-state p{font-size:14px;color:var(--text-muted);line-height:1.75;max-width:500px;margin:0 auto 16px;}
+    .error-state code{font-family:'Space Mono',monospace;font-size:12px;color:var(--red);background:var(--bg);padding:4px 10px;border-radius:6px;border:1px solid var(--border);}
+
+    /* TOAST premium */
+    .toast{position:fixed;bottom:32px;right:32px;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:14px 24px;color:var(--accent);font-family:'Space Mono',monospace;font-size:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(20px);transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);z-index:9999;pointer-events:none;font-weight:700;}
+    .toast.show{opacity:1;transform:translateY(0);}
+
+    /* INSIGHT CHIPS */
+    .insight-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+    .insight-chip{padding:8px 16px;border-radius:9999px;border:1px solid var(--border);background:var(--surface2);font-size:12px;color:var(--text-muted);line-height:1.4;transition:all 0.2s;}
+    .insight-chip:hover{border-color:var(--accent);color:var(--text);}
+    .insight-chip strong{color:var(--accent);font-weight:700;}
+  
+    /* BOTTOM NAV BAR */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,15,0.95);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 12px 10px 24px; z-index: 9999;
+    }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      color: var(--text-muted); text-decoration: none; font-size: 9px;
+      font-family: 'Space Mono', monospace; font-weight: 700;
+      transition: all 0.2s; padding: 8px 16px; border-radius: 14px;
+    }
+    .bottom-nav-item i { font-size: 20px; font-style: normal; margin-bottom: 2px; }
+    .bottom-nav-item.active { background: rgba(88,166,255,0.1); color: var(--accent); }
+    .bottom-nav-item.active i { color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress-bar"></div>
+
+<header style="background:transparent; border-bottom:none; margin-top:14px; padding:10px 24px;">
+  <div class="logo">
+    <div style="background:var(--accent-bg);padding:8px;border-radius:12px;border:1px solid var(--accent);font-size:20px;">🐙</div>
+    <div>
+      <div class="logo-text" style="font-size:16px; font-weight:700; color:var(--accent);">GitPulse</div>
+      <div class="logo-sub" style="font-size:9px;">GITHUB TALENT INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="/" class="btn-back" style="background:var(--surface2); border:none; padding:8px 14px; font-weight:700; color:var(--text); text-decoration:none; border-radius:12px;">← Go Back</a>
+  </div>
+</header>
+
+
+
+<div class="page-hero" style="padding-top:20px; padding-bottom:10px; border:none; background:transparent;">
+  <div style="display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); margin-bottom:20px;">
+    <span style="font-size:20px;">📈</span>
+  </div>
+  <h1 style="font-size:42px; font-weight:700; line-height:1.1; margin-bottom:16px; color:var(--text); letter-spacing:-0.03em;">
+    Live Market<br/><span style="color:var(--accent);">Trends</span>
+  </h1>
+  <p style="font-size:13px; color:var(--text-muted); max-width:320px; margin:0 auto; line-height:1.6;">
+    Real-time repository counts from GitHub's search API — see which technologies are dominating the developer ecosystem right now.
+  </p>
+</div>
+
+<div class="controls">
+  <button class="btn-refresh" id="refresh-btn" onclick="loadTrends()">
+    <span id="refresh-icon">🔄</span> Refresh Data
+  </button>
+  <div class="last-updated" id="last-updated">—</div>
+</div>
+
+<main id="main-content">
+  <div class="spinner-inline">
+    <div class="spin-circle"></div>
+    FETCHING LIVE GITHUB DATA...
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Theme ──
+  function setTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    localStorage.setItem('gh_theme',t);
+    ['dark','navy','light'].forEach(x=>{ const el=document.getElementById('pill-'+x); if(el) el.classList.toggle('active',x===t); });
+    if(window._chartsReady) rebuildCharts();
+  }
+  (()=>{ setTheme(localStorage.getItem('gh_theme')||'dark'); })();
+
+  function isDark(){ return document.documentElement.getAttribute('data-theme')!=='light'; }
+  function isNavy(){ return document.documentElement.getAttribute('data-theme')==='navy'; }
+  function accentColor(){ return isNavy()?'#64ffda': isDark()?'#58a6ff':'#0969da'; }
+  function textColor(){ return isDark()||isNavy()?'#8b949e':'#57606a'; }
+  function gridColor(){ return isDark()||isNavy()?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)'; }
+
+  // Colour palette for charts
+  const PALETTE=[
+    '#58a6ff','#34d399','#fbbf24','#a78bfa','#fb7185',
+    '#38bdf8','#f97316','#e879f9','#4ade80','#facc15',
+    '#60a5fa','#2dd4bf',
+  ];
+
+  // Extended topic sets for the additional charts
+  const TOPICS_MAIN   = ['AI Agents','FastAPI','TensorFlow','React','Rust'];
+  const TOPICS_LANG   = ['Python','JavaScript','TypeScript','Go','Rust','Kotlin','Swift'];
+  const TOPICS_CLOUD  = ['AWS','GCP','Azure','Docker','Kubernetes','Terraform'];
+  const TOPICS_ML     = ['PyTorch','TensorFlow','Hugging Face','LangChain','scikit-learn','ONNX'];
+
+  let _raw = null; // cached raw API data (categorized)
+  const chartInstances = {};
+
+  function destroyChart(id){
+    if(chartInstances[id]){ chartInstances[id].destroy(); delete chartInstances[id]; }
+  }
+
+  async function loadTrends(){
+    const btn=document.getElementById('refresh-btn');
+    const icon=document.getElementById('refresh-icon');
+    if(btn) btn.disabled=true; 
+    if(icon) icon.textContent='⏳';
+    document.getElementById('progress-bar').classList.add('loading');
+
+    try{
+      const res=await fetch('/api/market_trends');
+      if(!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+      const data=await res.json();
+      
+      _raw = data.trends; // categorized object
+      window._chartsReady=true;
+
+      renderPage(_raw);
+
+      const now=new Date();
+      document.getElementById('last-updated').textContent=
+        `Last updated: ${now.toLocaleTimeString()} · Live Categorized GitHub Data`;
+      showToast('📈 Trends updated!');
+    }catch(e){
+      console.error(e);
+      document.getElementById('main-content').innerHTML=`
+        <div class="error-state">
+          <div class="err-icon">⚠️</div>
+          <p>Could not fetch market data.<br>${e.message}<br><br>
+          Check your <code>GITHUB_TOKEN</code> and server status.</p>
+        </div>`;
+    }finally{
+      if(btn) btn.disabled=false; 
+      if(icon) icon.textContent='🔄';
+      document.getElementById('progress-bar').classList.remove('loading');
+    }
+  }
+
+  function fmt(n){ return n>=1000000?`${(n/1000000).toFixed(1)}M`:n>=1000?`${(n/1000).toFixed(1)}K`:String(n); }
+
+  function renderPage(trends){
+    // Helper to get sorted list from a category
+    const getSorted = (cat) => Object.entries(trends[cat] || {}).map(([l,v])=>({l,v})).sort((a,b)=>b.v-a.v);
+    
+    const langSorted  = getSorted('languages');
+    const cloudSorted = getSorted('cloud');
+    const mlSorted    = getSorted('ml_ecosystem');
+    const fwSorted    = getSorted('frameworks');
+
+    // Overall top 10 for the main table
+    const allSorted = [...langSorted, ...cloudSorted, ...mlSorted, ...fwSorted].sort((a,b)=>b.v-a.v).slice(0,10);
+    const maxVal = Math.max(...allSorted.map(x=>x.v), 1);
+    const total  = allSorted.reduce((a,b)=>a+b.v, 0);
+
+    // STAT CARDS (Top of each category)
+    const stats = [
+      { l: langSorted[0]?.l, v: langSorted[0]?.v, cat: 'LANGUAGE', icon: '💻', color: '#58a6ff' },
+      { l: cloudSorted[0]?.l, v: cloudSorted[0]?.v, cat: 'CLOUD/INFRA', icon: '☁️', color: '#34d399' },
+      { l: mlSorted[0]?.l, v: mlSorted[0]?.v, cat: 'AI / ML', icon: '🧠', color: '#fbbf24' },
+      { l: fwSorted[0]?.l, v: fwSorted[0]?.v, cat: 'FRAMEWORK', icon: '⚡', color: '#a78bfa' }
+    ];
+
+    const statHTML = stats.map(s => `
+      <div class="stat-card" style="border-left:3px solid ${s.color};">
+        <div class="stat-icon">${s.icon}</div>
+        <div>
+          <div class="stat-value" style="color:${s.color};">${fmt(s.v || 0)}</div>
+          <div class="stat-label">${s.l || 'N/A'} <span style="font-size:9px;opacity:0.6;margin-left:4px;">(${s.cat})</span></div>
+        </div>
+      </div>`).join('');
+
+    // LEADER TABLE rows (Overall Top 10)
+    const tableRows = allSorted.map((item, i) => {
+      const pct = ((item.v / maxVal) * 100).toFixed(0);
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);">${i + 1}</span>`;
+      return `
+        <tr>
+          <td><span class="rank-medal">${medal}</span></td>
+          <td><strong>${item.l}</strong></td>
+          <td>
+            <div class="bar-cell">
+              <div style="flex:1;height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;min-width:80px;">
+                <div class="bar-fill" style="width:${pct}%;background:${PALETTE[i % PALETTE.length]}"></div>
+              </div>
+              <span class="bar-text">${fmt(item.v)}</span>
+            </div>
+          </td>
+          <td style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-muted);">${((item.v / total) * 100).toFixed(1)}%</td>
+        </tr>`;
+    }).join('');
+
+    // AUTO INSIGHTS
+    const insights = [
+      `<strong>${langSorted[0]?.l}</strong> remains the most dominant language in the current dev ecosystem.`,
+      `<strong>${cloudSorted[0]?.l}</strong> leads cloud adoption, with <strong>${fmt(cloudSorted[0]?.v)}</strong> repo mentions.`,
+      `In ML, <strong>${mlSorted[0]?.l}</strong> shows strong momentum against traditional toolkits.`,
+      `<strong>${fwSorted[0]?.l}</strong> is the primary choice for modern web architecture.`,
+    ];
+    const insightHTML = insights.map(i => `<div class="insight-chip">${i}</div>`).join('');
+
+    document.getElementById('main-content').innerHTML = `
+      <!-- STAT ROW -->
+      <div class="stat-row" id="stat-row">${statHTML}</div>
+
+      <!-- CHART GRID -->
+      <div class="chart-grid">
+
+        <!-- CHART 1: LANGUAGES (Vertical Bar) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">📊 TOP LANGUAGES</div>
+              <div class="chart-subtitle">Repository presence by language</div>
+            </div>
+            <span class="chart-badge">BAR CHART</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-languages"></canvas>
+          </div>
+        </div>
+
+        <!-- CHART 2: CLOUD INFRA (Doughnut) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">🍩 CLOUD & INFRA</div>
+              <div class="chart-subtitle">Platform & DevOps tool distribution</div>
+            </div>
+            <span class="chart-badge">DOUGHNUT</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="chart-cloud"></canvas>
+          </div>
+        </div>
+
+        <!-- CHART 3: OVERALL SCALE (Horizontal Bar) -->
+        <div class="chart-card chart-card-full">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">🏆 GLOBAL TECH LEADERS</div>
+              <div class="chart-subtitle">Combined top performers across all sectors</div>
+            </div>
+            <span class="chart-badge">RANKED</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+            <div class="chart-wrap-sm">
+              <canvas id="chart-global"></canvas>
+            </div>
+            <div>
+              <table class="leader-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>TECHNOLOGY</th>
+                    <th>REPOS</th>
+                    <th>SHARE</th>
+                  </tr>
+                </thead>
+                <tbody id="leader-tbody">${tableRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHART 4: ML ECOSYSTEM (Polar Area) -->
+        <div class="chart-card chart-card-full">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">🧠 AI & ML ECOSYSTEM</div>
+              <div class="chart-subtitle">Framework momentum & intelligence stack</div>
+            </div>
+            <span class="chart-badge">POLAR AREA</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
+            <div class="chart-wrap">
+              <canvas id="chart-ml"></canvas>
+            </div>
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:14px;">🔍 TREND INSIGHTS</div>
+              <div class="insight-row">${insightHTML}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>`;
+
+    // animate bar fills
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill').forEach(el => {
+        const w = el.style.width; el.style.width = '0';
+        setTimeout(() => el.style.width = w, 50);
+      });
+    }, 100);
+
+    buildCharts(langSorted, cloudSorted, mlSorted, fwSorted, allSorted);
+  }
+
+  function buildCharts(langS, cloudS, mlS, fwS, allS){
+    const dark=isDark()||isNavy();
+    const ac=accentColor();
+    const tc=textColor();
+    const gc=gridColor();
+
+    Chart.defaults.color=tc;
+    Chart.defaults.font.family="'Space Mono', monospace";
+    Chart.defaults.font.size=9;
+
+    const commonOptions = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    };
+
+    // 1. LANGUAGES (Vertical Bar)
+    destroyChart('languages');
+    chartInstances['languages'] = new Chart(document.getElementById('chart-languages'), {
+      type: 'bar',
+      data: {
+        labels: langS.map(x=>x.l),
+        datasets: [{
+          data: langS.map(x=>x.v),
+          backgroundColor: PALETTE.slice(0, langS.length).map(c=>c+'99'),
+          borderColor: PALETTE.slice(0, langS.length),
+          borderWidth: 1.5, borderRadius: 4
+        }]
+      },
+      options: { ...commonOptions, scales: { 
+        x:{grid:{color:gc},ticks:{color:tc}}, 
+        y:{grid:{color:gc},ticks:{color:tc, callback: v=>fmt(v)}, beginAtZero: true} 
+      }}
+    });
+
+    // 2. CLOUD (Doughnut)
+    destroyChart('cloud');
+    chartInstances['cloud'] = new Chart(document.getElementById('chart-cloud'), {
+      type: 'doughnut',
+      data: {
+        labels: cloudS.map(x=>x.l),
+        datasets: [{
+          data: cloudS.map(x=>x.v),
+          backgroundColor: PALETTE.slice(4).map(c=>c+'cc'),
+          borderWidth: 1, cutout: '65%'
+        }]
+      },
+      options: { ...commonOptions, plugins: { legend: { display: true, position: 'right', labels: { color: tc, boxWidth: 10 } } } }
+    });
+
+    // 3. GLOBAL TOP (Horizontal Bar)
+    destroyChart('global');
+    chartInstances['global'] = new Chart(document.getElementById('chart-global'), {
+      type: 'bar',
+      data: {
+        labels: allS.map(x=>x.l),
+        datasets: [{
+          label: 'Total Repos',
+          data: allS.map(x=>x.v),
+          backgroundColor: PALETTE.map(c=>c+'bb'),
+          borderWidth: 1, borderRadius: 4
+        }]
+      },
+      options: { ...commonOptions, indexAxis: 'y', scales: { 
+        x:{grid:{color:gc},ticks:{color:tc, callback: v=>fmt(v)}}, 
+        y:{grid:{display:false},ticks:{color:tc}} 
+      }}
+    });
+
+    // 4. ML (Polar Area)
+    destroyChart('ml');
+    chartInstances['ml'] = new Chart(document.getElementById('chart-ml'), {
+      type: 'polarArea',
+      data: {
+        labels: mlS.map(x=>x.l),
+        datasets: [{
+          data: mlS.map(x=>x.v),
+          backgroundColor: PALETTE.slice(2).map(c=>c+'66'),
+          borderColor: PALETTE.slice(2),
+          borderWidth: 1
+        }]
+      },
+      options: { ...commonOptions, scales: { r: { grid: { color: gc }, ticks: { display: false } } } }
+    });
+  }
+
+  function rebuildCharts(){
+    if(!_raw) return;
+    renderPage(_raw);
+  }
+
+  // ── Toast ──
+  let toastTimer;
+  function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800); }
+
+  // Auto-load on page open
+  loadTrends();
+</script>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item active" href="/">
+    <i>🔍</i>
+    <span>HOME</span>
+  </a>
+  <a class="bottom-nav-item" href="/jd-match">
+    <i>🎯</i>
+    <span>JD MATCH</span>
+  </a>
+  <a class="bottom-nav-item" href="/market-trends">
+    <i>📈</i>
+    <span>TRENDS</span>
+  </a>
+  <a class="bottom-nav-item" href="/role-analyzer">
+    <i>📊</i>
+    <span>ANALYZE</span>
+  </a>
+</nav>
+
+</body>
+</html>

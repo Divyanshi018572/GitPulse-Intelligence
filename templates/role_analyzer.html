@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GitPulse: Role Assessor — GitHub Talent Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:#0a0a0f; --surface:#0e0e13; --surface2:#16161d;
+      --border:#1c1c24; --border2:#2d2d39;
+      --text:#f0f0f5; --text-muted:#9494a1;
+      --accent:#58a6ff; --accent2:#1f6feb; --accent-bg:rgba(88,166,255,0.1);
+      --secondary:#9d8fff; --secondary-bg:rgba(157,143,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.5);
+      --green:#34d399; --yellow:#fbbf24; --red:#f87171; --purple:#a78bfa;
+    }
+    :root[data-theme="light"] {
+      --bg:#f8f9fc; --surface:#ffffff; --surface2:#f1f4f9;
+      --border:#e1e4e8; --border2:#d1d5da;
+      --text:#1a1a2e; --text-muted:#6a737d;
+      --accent:#0969da; --accent2:#0550ae; --accent-bg:rgba(9,105,218,0.05);
+      --secondary:#6f42c1; --secondary-bg:rgba(111,66,193,0.05);
+      --shadow:0 8px 24px rgba(149,157,165,0.12);
+      --green:#16a34a; --yellow:#d97706; --red:#dc2626; --purple:#7c3aed;
+    }
+    :root[data-theme="navy"] {
+      --bg:#0b1121; --surface:#111a2f; --surface2:#1d2943;
+      --border:#1e2d4d; --border2:#2a3b5e;
+      --text:#e6edf3; --text-muted:#8b9eb0;
+      --accent:#64ffda; --accent2:#0a85d9; --accent-bg:rgba(100,255,218,0.1);
+      --secondary:#70a1ff; --secondary-bg:rgba(112,161,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.6);
+      --green:#34d399; --yellow:#fbbf24; --red:#f87171; --purple:#c4b5fd;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:all 0.3s;}
+    h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;}
+
+    /* PROGRESS BAR */
+    .progress-bar{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));z-index:9999;display:none;}
+    .progress-bar.loading{display:block;animation:progress 1.5s ease-in-out infinite;}
+    @keyframes progress{0%{transform:scaleX(0);transform-origin:left;}50%{transform:scaleX(0.6);transform-origin:left;}100%{transform:scaleX(1);transform-origin:left;opacity:0;}}
+
+    /* HEADER */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:var(--shadow/2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
+    .logo-text{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);}
+    .header-right{display:flex;align-items:center;gap:8px;}
+    .btn-back{padding:7px 16px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+    .btn-back:hover{border-color:var(--accent);color:var(--accent);}
+    .theme-switcher{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:3px;}
+    .theme-pill{padding:4px 10px;border-radius:14px;border:none;background:transparent;color:var(--text-muted);font-size:10px;font-family:'Space Mono',monospace;cursor:pointer;transition:all 0.2s;}
+    .theme-pill.active{background:var(--accent2);color:#fff;}
+    .theme-pill:not(.active):hover{color:var(--accent);}
+
+    /* NAV */
+    .nav-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;overflow-x:auto;}
+    .nav-tab{padding:12px 18px;border:none;background:transparent;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;letter-spacing:0.05em;text-decoration:none;display:flex;align-items:center;gap:5px;}
+    .nav-tab:hover{color:var(--accent);}
+    .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+    /* PAGE HERO */
+    .page-hero{text-align:center;padding:48px 20px 32px;max-width:720px;margin:0 auto;}
+    .page-hero-icon{font-size:52px;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px var(--accent-bg));}
+    .page-hero h1{font-size:32px;font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,var(--text) 30%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .page-hero p{font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:300;}
+
+    /* MAIN */
+    main{padding-bottom:100px; max-width:920px;margin:0 auto;padding:0 20px 60px;}
+
+    /* CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;margin-bottom:20px;box-shadow:var(--shadow);animation:fadeUp 0.35s ease;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+    .card-title{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;margin-bottom:14px;}
+
+    /* FORM */
+    .form-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px;}
+    label{display:block;font-size:11px;font-family:'Space Mono',monospace;color:var(--text-muted);margin-bottom:5px;letter-spacing:0.05em;}
+    input[type="text"]{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+    input[type="text"]:focus{border-color:var(--accent);}
+
+    /* ROLE CHIPS */
+    .chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;margin-bottom:16px}
+    .chip{padding:5px 12px;border:1px solid var(--border2);border-radius:20px;font-size:11px;font-family:'Space Mono',monospace;color:var(--text-muted);cursor:pointer;transition:all 0.2s;user-select:none;}
+    .chip:hover:not(.selected){border-color:var(--accent);color:var(--accent);}
+
+    /* SUBMIT */
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 26px;background:linear-gradient(90deg,var(--accent2) 0%,var(--accent) 100%);border:none;border-radius:9px;color:#fff;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s,transform 0.15s;letter-spacing:0.05em;margin-top:4px;}
+    .btn-primary:hover:not(:disabled){opacity:0.88;transform:translateY(-1px);}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+    .btn-secondary{padding:8px 16px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.2s;}
+    .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* ALERTS / RESULTS */
+    .results-card{display:flex;flex-direction:column;gap:16px;padding:28px;background:var(--surface);border:1px solid var(--border);border-radius:24px;margin-bottom:20px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);animation:fadeUp 0.5s ease both;position:relative;overflow:hidden;}
+    .results-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
+    
+    .score-badge{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 24px;border-radius:12px;font-family:'Space Mono',monospace;font-size:24px;font-weight:700;box-shadow:0 0 25px rgba(0,0,0,0.15); align-self: flex-start;}
+    .score-high{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.5);color:var(--green);}
+    .score-mid{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.5);color:var(--yellow);}
+    .score-low{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.5);color:var(--red);}
+    
+    .list-section{background:var(--bg);border:1px solid var(--border2);border-radius:16px;padding:20px 24px;font-size:14px;line-height:1.75;color:var(--text);}
+    .list-section h3{font-family:'Space Mono',monospace;font-size:12px;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.1em;}
+    .list-section ul{list-style:none;margin-left:0;padding-left:0;}
+    .list-section li{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;}
+    .list-section li::before{font-family:monospace;font-size:16px;line-height:1.2;}
+    .strengths h3{color:var(--green);}
+    .strengths li::before{content:"✅";color:var(--green);}
+    .weaknesses h3{color:var(--yellow);}
+    .weaknesses li::before{content:"⚠️";color:var(--yellow);}
+
+    /* SPINNER */
+    .spinner-inline{display:flex;align-items:center;justify-content:center;gap:12px;padding:48px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spin-circle{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+
+    /* EMPTY/ERROR */
+    .empty-state{text-align:center;padding:48px 20px;color:var(--text-muted);}
+    .empty-icon{font-size:42px;margin-bottom:14px;}
+    .empty-state p{font-size:13px;line-height:1.65;}
+    .error-msg{color:#f85149;font-size:12px;text-align:center;padding:20px;font-family:'Space Mono',monospace;}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:11px 18px;color:var(--accent);font-family:'Space Mono',monospace;font-size:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);transition:all 0.3s;z-index:9999;pointer-events:none;}
+    .toast.show{opacity:1;transform:translateY(0);}
+
+  
+    /* BOTTOM NAV BAR */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,15,0.95);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 12px 10px 24px; z-index: 9999;
+    }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      color: var(--text-muted); text-decoration: none; font-size: 9px;
+      font-family: 'Space Mono', monospace; font-weight: 700;
+      transition: all 0.2s; padding: 8px 16px; border-radius: 14px;
+    }
+    .bottom-nav-item i { font-size: 20px; font-style: normal; margin-bottom: 2px; }
+    .bottom-nav-item.active { background: rgba(88,166,255,0.1); color: var(--accent); }
+    .bottom-nav-item.active i { color: var(--accent); }
+
+    /* DEEP ANALYZE SECTION */
+    .deep-analyze-card{background:linear-gradient(135deg,rgba(88,166,255,0.06) 0%,rgba(157,143,255,0.06) 100%);border:1px solid var(--accent2);border-radius:16px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden;}
+    .deep-analyze-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));}
+    .deep-analyze-title{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase;}
+    .deep-analyze-desc{font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;}
+    .feature-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+    .feature-pill{padding:5px 12px;border-radius:20px;font-size:10px;font-family:'Space Mono',monospace;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);white-space:nowrap;transition:all 0.2s;}
+    .feature-pill:hover{border-color:var(--accent);color:var(--accent);}
+    .btn-deep-analyze{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(90deg,var(--accent2),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:all 0.2s;}
+    .btn-deep-analyze:hover{opacity:0.9;transform:translateY(-1px);box-shadow:0 6px 20px var(--accent-bg);}
+    .btn-deep-analyze.ready{opacity:1;}
+    .deep-analyze-note{font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;margin-top:12px;}
+
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress-bar"></div>
+
+<header style="background:transparent; border-bottom:none; margin-top:14px; padding:10px 24px;">
+  <div class="logo">
+    <div style="background:var(--accent-bg);padding:8px;border-radius:12px;border:1px solid var(--accent);font-size:20px;">🐙</div>
+    <div>
+      <div class="logo-text" style="font-size:16px; font-weight:700; color:var(--accent);">GitPulse</div>
+      <div class="logo-sub" style="font-size:9px;">GITHUB TALENT INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="/" class="btn-back" style="background:var(--surface2); border:none; padding:8px 14px; font-weight:700; color:var(--text); text-decoration:none; border-radius:12px;">← Go Back</a>
+  </div>
+</header>
+
+
+
+<div class="page-hero" style="padding-top:20px; padding-bottom:10px; border:none; background:transparent;">
+  <div style="display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); margin-bottom:20px;">
+    <span style="font-size:20px;">🧑‍🔧</span>
+  </div>
+  <h1 style="font-size:42px; font-weight:700; line-height:1.1; margin-bottom:16px; color:var(--text); letter-spacing:-0.03em;">
+    Role <span style="color:var(--accent);">Assessor</span>
+  </h1>
+  <p style="font-size:13px; color:var(--text-muted); max-width:320px; margin:0 auto; line-height:1.6;">
+    Paste any GitHub Profile or Repository URL and specify a Job Role. Our AI instantly evaluates strengths, weaknesses, and calculates a precise match score.
+  </p>
+</div>
+
+<main>
+
+  <!-- INPUT CARD -->
+  <div class="card" id="input-card">
+    <div class="card-title">🔍 ANALYZE GITHUB LINK</div>
+    
+    <div class="form-grid">
+      <div>
+        <label for="url-input">GITHUB URL *</label>
+        <input type="text" id="url-input" placeholder="e.g. https://github.com/torvalds/linux or https://github.com/karpathy"/>
+      </div>
+      <div style="margin-top: 8px;">
+        <label for="role-input">TARGET JOB ROLE *</label>
+        <input type="text" id="role-input" placeholder="e.g. Senior Backend Engineer"/>
+        
+        <label style="margin-top:12px;">QUICK SELECT ROLES</label>
+        <div class="chip-group" id="roles-group">
+          <span class="chip" onclick="fillRole('Senior Software Engineer')">👨‍💻 Software Engineer</span>
+          <span class="chip" onclick="fillRole('Machine Learning Engineer')">🤖 ML Engineer</span>
+          <span class="chip" onclick="fillRole('Data Scientist')">📊 Data Scientist</span>
+          <span class="chip" onclick="fillRole('Full-Stack Developer')">⚡ Full-Stack Developer</span>
+          <span class="chip" onclick="fillRole('DevOps Engineer')">🛠️ DevOps Engineer</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border2);">
+      <label for="stack-input" style="display:block; margin-bottom:8px; font-size:10px; color:var(--accent); font-family:'Space Mono',monospace; letter-spacing:0.1em; text-transform:uppercase;">🏢 COMPANY STACK / CORE TECHNOLOGIES (OPTIONAL)</label>
+      <textarea id="stack-input" placeholder="e.g. Python, Docker, PostgreSQL, AWS, React, Kubernetes..." style="width:100%; height:80px; background:var(--surface); border:1px solid var(--border2); border-radius:12px; color:var(--text); padding:12px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+      <div style="font-size:10px; color:var(--text-muted); margin-top:6px; font-family:'Space Mono', monospace;">
+        💡 Provide your tech stack to enable <strong style="color:var(--accent);">Automated Enterprise Scoring</strong> for this candidate.
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;">
+      <button class="btn-primary" id="analyze-btn" onclick="runAnalysis()">
+        <span id="btn-icon">⚡</span> <span id="btn-text">Analyze Profile/Repo</span>
+      </button>
+      <button class="btn-secondary" onclick="clearAll()">✕ Clear</button>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-muted);margin-left:auto;">
+        Powered by <span style="color:var(--accent);">AI Engine</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEP ANALYZE SECTION -->
+  <div class="deep-analyze-card" id="deep-analyze-card">
+    <div class="deep-analyze-title">🔬 DEEP PROFILE ANALYSIS DASHBOARD</div>
+    <p class="deep-analyze-desc">
+      Enter a GitHub <strong style="color:var(--text);">profile URL</strong> above, then click below to open the full AI Analysis Dashboard — with all 8 deep-dive features powered by our Talent Engine.
+    </p>
+    <div class="feature-pills">
+      <span class="feature-pill">🧠 Behavioral Persona</span>
+      <span class="feature-pill">✨ AI Summary</span>
+      <span class="feature-pill">🎯 Skill Radar Chart</span>
+      <span class="feature-pill">📁 Repo Dive</span>
+      <span class="feature-pill">👥 Similar Devs</span>
+      <span class="feature-pill">📅 Activity Heatmap</span>
+      <span class="feature-pill">📧 Draft Outreach Email</span>
+      <span class="feature-pill">📄 Export PDF Report</span>
+    </div>
+    <button class="btn-deep-analyze" id="deep-analyze-btn" onclick="openDeepAnalysis()">
+      🔬 Open Full Analysis Dashboard &rarr;
+    </button>
+    <div class="deep-analyze-note" id="deep-analyze-note">
+      ⚡ Paste a GitHub profile URL in the field above to enable this feature
+    </div>
+  </div>
+
+  <!-- RESULTS AREA -->
+  <div id="results-area"></div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Toast timer (must be declared at top to avoid TDZ errors) ──
+  let toastTimer;
+
+  // ── Theme ──
+  function setTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    localStorage.setItem('gh_theme',t);
+    ['dark','navy','light'].forEach(x=>{ const el=document.getElementById('pill-'+x); if(el) el.classList.toggle('active',x===t); });
+  }
+  (()=>{ setTheme(localStorage.getItem('gh_theme')||'dark'); })();
+
+  function fillRole(role) {
+    document.getElementById('role-input').value = role;
+    showToast(`👨‍💻 Role set to ${role}`);
+  }
+
+  function clearAll(){
+    document.getElementById('url-input').value='';
+    document.getElementById('role-input').value='';
+    document.getElementById('stack-input').value='';
+    document.getElementById('results-area').innerHTML='';
+  }
+
+  // ── Main analysis function ──
+  async function runAnalysis(){
+    const url=document.getElementById('url-input').value.trim();
+    if(!url){ showToast('⚠️ Please provide a GitHub URL'); return; }
+
+    const role=document.getElementById('role-input').value.trim();
+    if(!role){ showToast('⚠️ Please specify a target job role'); return; }
+
+    const stack=document.getElementById('stack-input').value.trim();
+    const btn=document.getElementById('analyze-btn');
+    const icon=document.getElementById('btn-icon');
+    const txt=document.getElementById('btn-text');
+
+    btn.disabled=true; icon.textContent='⏳'; txt.textContent='Analysing with AI Engine...';
+    document.getElementById('progress-bar').classList.add('loading');
+
+    document.getElementById('results-area').innerHTML=`
+      <div class="spinner-inline">
+        <div class="spin-circle"></div>
+        AI ENGINE IS PERFORMING ENTERPRISE-GRADE ANALYSIS...
+      </div>`;
+
+    try{
+      const res=await fetch('/api/analyze_for_role',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url, role, stack}),
+      });
+      if(!res.ok){
+        const err=await res.json();
+        throw new Error(err.detail||'API error');
+      }
+      const data=await res.json();
+      renderResults(data, url, role);
+      showToast(`🎯 Analysis Complete!`);
+    }catch(e){
+      document.getElementById('results-area').innerHTML=`
+        <div class="card">
+          <div class="error-msg">⚠️ ${e.message}</div>
+        </div>`;
+    }finally{
+      btn.disabled=false; icon.textContent='⚡'; txt.textContent='Analyze Profile/Repo';
+      document.getElementById('progress-bar').classList.remove('loading');
+    }
+  }
+
+  function scoreClass(s){ return s>=70?'score-high':s>=40?'score-mid':'score-low'; }
+  function scoreEmoji(s){ return s>=70?'🟢':s>=40?'🟡':'🔴'; }
+
+  function renderResults(data, url, role){
+    if(!data) {
+      document.getElementById('results-area').innerHTML=`
+        <div class="card">
+          <div class="empty-state"><p>No data returned.</p></div>
+        </div>`;
+      return;
+    }
+
+    const { score, strengths = [], weaknesses = [] } = data;
+
+    let html=`
+      <div class="results-card">
+        <div style="display:flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;">Analysis for role: <span style="color:var(--accent);">${role}</span></div>
+            <a href="${url}" target="_blank" style="color:var(--text);font-size:18px;font-family:'Space Grotesk',sans-serif;font-weight:700;text-decoration:none;">🔗 ${url.replace('https://github.com/', '')}</a>
+          </div>
+          <div class="score-badge ${scoreClass(score)}">${scoreEmoji(score)} ${score}/100 Match</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 10px;">
+          <div class="list-section strengths">
+            <h3>Strengths</h3>
+            ${strengths.length ? `<ul>${strengths.map(s => `<li>${s}</li>`).join('')}</ul>` : '<p style="color:var(--text-muted);">No distinct strengths identified from this repository/profile.</p>'}
+          </div>
+
+          <div class="list-section weaknesses">
+            <h3>Weaknesses / Gaps</h3>
+            ${weaknesses.length ? `<ul>${weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>` : '<p style="color:var(--text-muted);">No major weaknesses found!</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('results-area').innerHTML=html;
+  }
+
+  // ── Toast ──
+  function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800); }
+
+  // Allow Ctrl+Enter to submit
+  document.getElementById('url-input').addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.key==='Enter') runAnalysis();
+  });
+  document.getElementById('role-input').addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.key==='Enter') runAnalysis();
+  });
+
+  // ── Deep Analyze: extract username from profile URL ──
+  function extractUsername(url){
+    // Matches https://github.com/username  (profile, not a repo)
+    const m = url.match(/^https?:\/\/github\.com\/([a-zA-Z0-9_\-]+)\/?$/);
+    return m ? m[1] : null;
+  }
+
+  function openDeepAnalysis(){
+    const url = document.getElementById('url-input').value.trim();
+    if(!url){ showToast('⚠️ Please enter a GitHub profile URL first'); return; }
+    const username = extractUsername(url);
+    if(!username){
+      showToast('⚠️ Use a profile URL (e.g. github.com/torvalds), not a repo link');
+      return;
+    }
+    window.open(`/analyze/${username}`, '_blank');
+  }
+
+  // ── Live URL feedback for Deep Analyze button ──
+  document.getElementById('url-input').addEventListener('input', function(){
+    const url = this.value.trim();
+    const note = document.getElementById('deep-analyze-note');
+    const btn  = document.getElementById('deep-analyze-btn');
+    const username = extractUsername(url);
+    if(username){
+      note.innerHTML = `✅ Ready — will open <strong style="color:var(--accent);">@${username}</strong>'s full 8-tab analysis`;
+      btn.classList.add('ready');
+    } else if(url){
+      note.textContent = '⚠️ Looks like a repo URL. Use a profile URL: github.com/username';
+      btn.classList.remove('ready');
+    } else {
+      note.textContent = '⚡ Paste a GitHub profile URL in the field above to enable this feature';
+      btn.classList.remove('ready');
+    }
+  });
+</script>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item active" href="/">
+    <i>🔍</i>
+    <span>HOME</span>
+  </a>
+  <a class="bottom-nav-item" href="/jd-match">
+    <i>🎯</i>
+    <span>JD MATCH</span>
+  </a>
+  <a class="bottom-nav-item" href="/market-trends">
+    <i>📈</i>
+    <span>TRENDS</span>
+  </a>
+  <a class="bottom-nav-item" href="/role-analyzer">
+    <i>📊</i>
+    <span>ANALYZE</span>
+  </a>
+</nav>
+
+</body>
+</html>

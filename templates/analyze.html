@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GitPulse: Analyze @{{ username }} — GitHub Talent Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:#0a0a0f; --surface:#0e0e13; --surface2:#16161d;
+      --border:#1c1c24; --border2:#2d2d39;
+      --text:#f0f0f5; --text-muted:#9494a1;
+      --accent:#58a6ff; --accent2:#1f6feb; --accent-bg:rgba(88,166,255,0.1);
+      --secondary:#9d8fff; --secondary-bg:rgba(157,143,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.5);
+      --hero-gradient:radial-gradient(circle at top left, rgba(88,166,255,0.08), transparent), radial-gradient(circle at bottom right, rgba(157,143,255,0.05), transparent);
+    }
+    :root[data-theme="light"] {
+      --bg:#f8f9fc; --surface:#ffffff; --surface2:#f1f4f9;
+      --border:#e1e4e8; --border2:#d1d5da;
+      --text:#1a1a2e; --text-muted:#6a737d;
+      --accent:#0969da; --accent2:#0550ae; --accent-bg:rgba(9,105,218,0.05);
+      --secondary:#6f42c1; --secondary-bg:rgba(111,66,193,0.05);
+      --shadow:0 8px 24px rgba(149,157,165,0.12);
+      --hero-gradient:linear-gradient(135deg,rgba(9,105,218,0.04) 0%,rgba(9,105,218,0.01) 100%);
+    }
+    :root[data-theme="navy"] {
+      --bg:#0b1121; --surface:#111a2f; --surface2:#1d2943;
+      --border:#1e2d4d; --border2:#2a3b5e;
+      --text:#e6edf3; --text-muted:#8b9eb0;
+      --accent:#64ffda; --accent2:#0a85d9; --accent-bg:rgba(100,255,218,0.1);
+      --secondary:#70a1ff; --secondary-bg:rgba(112,161,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.6);
+      --hero-gradient:radial-gradient(circle at 10% 20%, rgba(100,255,218,0.06), transparent 50%);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:all 0.3s;overflow-x:hidden;}
+    h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;}
+
+    /* HEADER */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
+    .logo-text{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);}
+    .header-right{display:flex;align-items:center;gap:8px;}
+    .btn-back{padding:7px 16px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+    .btn-back:hover{border-color:var(--accent);color:var(--accent);}
+    .theme-switcher{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:3px;}
+    .theme-pill{padding:4px 10px;border-radius:14px;border:none;background:transparent;color:var(--text-muted);font-size:10px;font-family:'Space Mono',monospace;cursor:pointer;transition:all 0.2s;}
+    .theme-pill.active{background:var(--accent2);color:#fff;}
+    .theme-pill:not(.active):hover{color:var(--accent);}
+
+    /* NAV TABS */
+    .nav-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;overflow-x:auto;}
+    .nav-tab{padding:12px 18px;border:none;background:transparent;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;letter-spacing:0.05em;text-decoration:none;display:flex;align-items:center;gap:5px;}
+    .nav-tab:hover{color:var(--accent);}
+    .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+    /* PROGRESS BAR */
+    .progress-bar{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));z-index:9999;display:none;}
+    .progress-bar.loading{display:block;animation:progress 1.5s ease-in-out infinite;}
+    @keyframes progress{0%{transform:scaleX(0);transform-origin:left;}50%{transform:scaleX(0.6);transform-origin:left;}100%{transform:scaleX(1);transform-origin:left;opacity:0;}}
+
+    /* HERO premium */
+    .hero{display:flex;flex-direction:column;align-items:center;padding:48px 20px 24px;text-align:center;background:var(--hero-gradient);position:relative;overflow:hidden;}
+    .hero-avatar{width:110px;height:110px;border-radius:50%;border:4px solid var(--surface2);box-shadow:0 0 40px var(--accent-bg);margin-bottom:16px;padding:3px;background:var(--bg);transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);}
+    .hero-avatar:hover{transform:scale(1.05) rotate(5deg);}
+    .hero-name{font-size:28px;font-weight:700;margin-bottom:6px;background:linear-gradient(135deg,var(--text) 30%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .hero-username{font-family:'Space Mono',monospace;font-size:14px;color:var(--accent);margin-bottom:12px;opacity:0.8;}
+    .hero-bio{font-size:15px;color:var(--text-muted);max-width:540px;line-height:1.7;margin-bottom:20px;font-weight:300;}
+    .hero-meta{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;}
+    .hero-stat{font-size:12px;color:var(--text-muted);font-family:'Space Mono',monospace;background:var(--surface2);padding:6px 14px;border-radius:10px;border:1px solid var(--border);}
+    .hero-stat span{color:var(--text);font-weight:700;}
+    .btn-github{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:linear-gradient(90deg,var(--accent2),var(--accent));border:none;border-radius:12px;color:#fff;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;text-decoration:none;transition:all 0.2s;box-shadow:0 4px 15px var(--accent-bg);}
+    .btn-github:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--accent-bg);opacity:0.9;}
+
+    /* INSIGHT TABS bar */
+    .insight-tabs{max-width:920px;margin:12px auto 0;padding:0 20px;}
+    .insight-tab-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:32px;border-bottom:1px solid var(--border);}
+    .insight-tab{padding:12px 20px;border:none;background:transparent;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.3s;white-space:nowrap;letter-spacing:0.04em;text-transform:uppercase;}
+    .insight-tab:hover{color:var(--accent);}
+    .insight-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-bg);border-radius:10px 10px 0 0;}
+
+    /* MAIN */
+    main{padding-bottom:100px; max-width:920px;margin:0 auto;padding:0 20px 80px;}
+
+    /* SECTION */
+    .section{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:32px;margin-bottom:24px;box-shadow:var(--shadow);display:none;animation:fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;position:relative;overflow:hidden;}
+    .section.active{display:block;}
+    .section::after{content:'';position:absolute;top:0;right:0;width:150px;height:150px;background:radial-gradient(circle at top right, var(--accent-bg), transparent);opacity:0.5;pointer-events:none;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+    .section-title{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;}
+    .section-desc{font-size:13px;color:var(--text-muted);margin-top:6px;font-weight:300;}
+
+    /* BUTTONS */
+    .btn-analyze{padding:10px 24px;background:linear-gradient(90deg,var(--accent2),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.05em;box-shadow:0 4px 12px var(--accent-bg);}
+    .btn-analyze:hover{opacity:0.9;transform:translateY(-1px);}
+    .btn-analyze:disabled{opacity:0.5;cursor:not-allowed;}
+
+    /* RESULT PLACEHOLDER */
+    .result-placeholder{text-align:center;padding:48px 24px;color:var(--text-muted);font-size:14px;border:1px dashed var(--border2);border-radius:16px;background:var(--bg);font-weight:300;}
+    .result-box{animation:fadeUp 0.4s ease;}
+
+    /* PERSONA premium */
+    .persona-card{display:flex;align-items:center;gap:24px;padding:28px;background:var(--accent-bg);border:1px solid var(--border2);border-radius:20px;position:relative;overflow:hidden;}
+    .persona-card::before{content:'';position:absolute;inset:0;background:linear-gradient(45deg, transparent, rgba(255,255,255,0.03));}
+    .persona-icon{font-size:56px;filter:drop-shadow(0 0 15px var(--accent));}
+    .persona-name{font-size:24px;font-weight:700;color:var(--accent);margin-bottom:6px;font-family:'Space Grotesk',sans-serif;}
+    .persona-desc{font-size:14px;color:var(--text);line-height:1.7;font-weight:300;}
+
+    /* AI SUMMARY card */
+    .ai-summary-card{padding:24px;background:var(--surface2);border:1px solid var(--border);border-radius:16px;font-size:15px;color:var(--text-muted);line-height:1.8;position:relative;}
+    .ai-summary-card strong{color:var(--text);font-weight:600;}
+    .ai-label{font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.12em;margin-bottom:12px;display:block;text-transform:uppercase;}
+
+    /* SIMILAR premium */
+    .similar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+    .similar-card{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:16px;text-decoration:none;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);}
+    .similar-card:hover{border-color:var(--accent);transform:translateY(-3px);background:var(--accent-bg);}
+    .similar-card img{width:42px;height:42px;border-radius:50%;border:1px solid var(--border2);}
+    .similar-card-name{font-size:14px;color:var(--text);font-weight:700;margin-bottom:2px;}
+    .similar-card-handle{font-size:11px;color:var(--accent);font-family:'Space Mono',monospace;opacity:0.8;}
+    .top-lang-badge{display:inline-block;margin-bottom:12px;padding:4px 14px;background:var(--accent-bg);border:1px solid var(--border2);border-radius:9999px;font-size:11px;font-family:'Space Mono',monospace;color:var(--accent);}
+
+    /* REPO DEEP DIVE premium */
+    .repo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+    .repo-card{padding:20px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;transition:all 0.3s ease;}
+    .repo-card:hover{border-color:var(--accent);background:var(--surface);}
+    .repo-card-name{font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:10px;display:block;}
+    .repo-card-desc{font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .repo-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;font-family:'Space Mono',monospace;color:var(--text-muted);}
+    .repo-meta span{background:var(--bg);padding:3px 10px;border-radius:6px;color:var(--text);border:1px solid var(--border2);}
+
+    /* EMAIL DRAFT box */
+    .email-box{padding:28px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;font-family:inherit;position:relative;background-image:radial-gradient(circle at 0% 0%, rgba(88,166,255,0.03), transparent 40%);}
+    .btn-copy-email{margin-top:16px;padding:10px 24px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;color:var(--accent);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.05em;}
+    .btn-copy-email:hover{background:var(--accent);color:#fff;}
+
+    /* SPINNER */
+    .spinner-inline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:64px;font-family:'Space Mono',monospace;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spin-circle{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+
+    /* SKELETON LOADER premium */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border2) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 12px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-avatar { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--border); margin: 0 auto 12px; }
+    .skeleton-title { height: 28px; width: 40%; margin: 12px auto 8px; }
+    .skeleton-text { height: 14px; width: 60%; margin: 0 auto 8px; }
+    .skeleton-box { height: 200px; width: 100%; margin-top: 24px; border-radius:24px; }
+
+    /* ERROR */
+    .error-msg{color:#f85149;font-size:13px;padding:24px;font-family:'Space Mono',monospace;text-align:center;background:rgba(248,81,73,0.05);border-radius:24px;border:1px solid rgba(248,81,73,0.2);}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:11px 18px;color:var(--accent);font-family:'Space Mono',monospace;font-size:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);transition:all 0.3s;z-index:9999;pointer-events:none;}
+    .toast.show{opacity:1;transform:translateY(0);}
+  
+    /* BOTTOM NAV BAR */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,15,0.95);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 12px 10px 24px; z-index: 9999;
+    }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      color: var(--text-muted); text-decoration: none; font-size: 9px;
+      font-family: 'Space Mono', monospace; font-weight: 700;
+      transition: all 0.2s; padding: 8px 16px; border-radius: 14px;
+    }
+    .bottom-nav-item i { font-size: 20px; font-style: normal; margin-bottom: 2px; }
+    .bottom-nav-item.active { background: rgba(88,166,255,0.1); color: var(--accent); }
+    .bottom-nav-item.active i { color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress-bar"></div>
+
+<header style="background:transparent; border-bottom:none; margin-top:14px; padding:10px 24px;">
+  <div class="logo">
+    <div style="background:var(--accent-bg);padding:8px;border-radius:12px;border:1px solid var(--accent);font-size:20px;">🐙</div>
+    <div>
+      <div class="logo-text" style="font-size:16px; font-weight:700; color:var(--accent);">GitPulse</div>
+      <div class="logo-sub" style="font-size:9px;">GITHUB TALENT INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="/" class="btn-back" style="background:var(--surface2); border:none; padding:8px 14px; font-weight:700; color:var(--text); text-decoration:none; border-radius:12px;">← Go Back</a>
+  </div>
+</header>
+
+
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="skeleton skeleton-avatar"></div>
+  <div class="skeleton skeleton-title"></div>
+  <div class="skeleton skeleton-text"></div>
+  <div class="skeleton skeleton-text" style="width:40%;"></div>
+</div>
+
+<!-- INSIGHT TAB BAR -->
+<div class="insight-tabs">
+  <div class="insight-tab-bar">
+    <button class="insight-tab active" onclick="switchTab('persona')">🧠 Persona</button>
+    <button class="insight-tab"       onclick="switchTab('ai')">✨ AI Summary</button>
+    <button class="insight-tab"       onclick="switchTab('radar')">🎯 Skill Radar</button>
+    <button class="insight-tab"       onclick="switchTab('repos')">📁 Repo Dive</button>
+    <button class="insight-tab"       onclick="switchTab('similar')">👥 Similar Devs</button>
+    <button class="insight-tab"       onclick="switchTab('heatmap')">📅 Heatmap</button>
+    <button class="insight-tab"       onclick="switchTab('email')">📧 Draft Email</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- PERSONA -->
+  <div class="section active" id="tab-persona">
+    <div class="section-header">
+      <div>
+        <div class="section-title">🧠 DEVELOPER PERSONA</div>
+        <div class="section-desc">Behavioral archetype from recent commit patterns</div>
+      </div>
+      <button class="btn-analyze" id="persona-btn" onclick="runPersona()">Run Analysis</button>
+    </div>
+    <div id="persona-result">
+      <div class="result-placeholder">Click "Run Analysis" to detect this developer's coding archetype.</div>
+    </div>
+  </div>
+
+  <!-- AI SUMMARY -->
+  <div class="section" id="tab-ai">
+    <div class="section-header">
+      <div>
+        <div class="section-title">✨ AI CANDIDATE SUMMARY</div>
+        <div class="section-desc">AI-generated professional overview powered by Gemini</div>
+      </div>
+      <button class="btn-analyze" id="ai-btn" onclick="runAISummary()">Generate Summary</button>
+    </div>
+    <div id="ai-result">
+      <div class="result-placeholder">Click "Generate Summary" to get an AI-written overview of this candidate.</div>
+    </div>
+  </div>
+
+  <!-- SKILL RADAR -->
+  <div class="section" id="tab-radar">
+    <div class="section-header">
+      <div>
+        <div class="section-title">🎯 SKILL RADAR</div>
+        <div class="section-desc">Strength across 6 software domains based on repo languages and topics</div>
+      </div>
+      <button class="btn-analyze" id="radar-btn" onclick="runRadar()">Generate Radar</button>
+    </div>
+    <div id="radar-result">
+      <div class="result-placeholder">Click "Generate Radar" to see this developer's skill distribution across Frontend, Backend, ML, DevOps, Mobile, and Open Source.</div>
+    </div>
+  </div>
+
+  <!-- REPO DEEP DIVE -->
+  <div class="section" id="tab-repos">
+    <div class="section-header">
+      <div>
+        <div class="section-title">📁 REPO DEEP DIVE</div>
+        <div class="section-desc">Top repositories with stars, language, and last activity</div>
+      </div>
+      <button class="btn-analyze" id="repos-btn" onclick="runRepoDive()">Load Repos</button>
+    </div>    <div id="repos-result">
+      <div class="result-placeholder">Click "Load Repos" to see this developer's top repositories.</div>
+    </div>
+  </div>
+
+  <!-- SIMILAR DEVS -->
+  <div class="section" id="tab-similar">
+    <div class="section-header">
+      <div>
+        <div class="section-title">👥 SIMILAR DEVELOPERS</div>
+        <div class="section-desc">Developers with the same tech stack</div>
+      </div>
+      <button class="btn-analyze" id="similar-btn" onclick="runSimilar()">Find Similar</button>
+    </div>
+    <div id="similar-result">
+      <div class="result-placeholder">Click "Find Similar" to discover developers with a matching tech stack.</div>
+    </div>
+  </div>
+
+  <!-- EMAIL DRAFT -->
+  <div class="section" id="tab-email">
+    <div class="section-header">
+      <div>
+        <div class="section-title">📧 OUTREACH EMAIL DRAFT</div>
+        <div class="section-desc">AI-written personalized cold email for this candidate</div>
+      </div>
+      <button class="btn-analyze" id="email-btn" onclick="runEmailDraft()">Draft Email</button>
+    </div>
+    <div id="email-result">
+      <div class="result-placeholder">Click "Draft Email" to generate a personalized outreach email using this developer's GitHub activity.</div>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="section" id="tab-heatmap">
+    <div class="section-header">
+      <div>
+        <div class="section-title">📅 CONTRIBUTION HEATMAP</div>
+        <div class="section-desc">52-week activity calendar from public GitHub events</div>
+      </div>
+      <button class="btn-analyze" id="heatmap-btn" onclick="runHeatmap()">Load Heatmap</button>
+    </div>
+    <div id="heatmap-result">
+      <div class="result-placeholder">Click "Load Heatmap" to see this developer's activity over the past year.</div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const USERNAME = "{{ username }}";
+
+  // ── Theme ──
+  function setTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    localStorage.setItem('gh_theme',t);
+    ['dark','navy','light'].forEach(x=>{ const el=document.getElementById('pill-'+x); if(el) el.classList.toggle('active',x===t); });
+  }
+  (()=>{ setTheme(localStorage.getItem('gh_theme')||'dark'); })();
+
+  // ── Insight Tabs ──
+  const TABS=['persona','ai','radar','repos','similar','heatmap','email'];
+  function switchTab(id){
+    TABS.forEach(t=>{
+      document.getElementById('tab-'+t).classList.toggle('active',t===id);
+      document.querySelectorAll('.insight-tab').forEach((btn,i)=>btn.classList.toggle('active',TABS[i]===id));
+    });
+  }
+  // sync tab buttons on load
+  document.querySelectorAll('.insight-tab').forEach((btn,i)=>btn.setAttribute('data-tab',TABS[i]));
+
+  // ── Load Profile ──
+  async function loadProfile(){
+    document.getElementById('progress-bar').classList.add('loading');
+    try{
+      const res=await fetch(`/api/user/${USERNAME}`);
+      if(!res.ok) throw new Error();
+      const u=await res.json();
+      if(u.error) throw new Error(u.error);
+      document.getElementById('hero').innerHTML=`
+        <img class="hero-avatar" src="${u.avatar_url}" alt="${u.login}"/>
+        <div class="hero-name">${u.name||u.login}</div>
+        <div class="hero-username">@${u.login}</div>
+        ${u.bio?`<div class="hero-bio">${u.bio}</div>`:''}
+        <div class="hero-meta">
+          ${u.location?`<div class="hero-stat">📍 <span>${u.location}</span></div>`:''}
+          <div class="hero-stat">📁 <span>${u.public_repos}</span> repos</div>
+          <div class="hero-stat">👥 <span>${u.followers.toLocaleString()}</span> followers</div>
+          ${u.company?`<div class="hero-stat">🏢 <span>${u.company}</span></div>`:''}
+        </div>
+        <a class="btn-github" href="${u.html_url}" target="_blank">🐙 VIEW ON GITHUB</a>`;
+    }catch(e){
+      document.getElementById('hero').innerHTML=`
+        <div class="hero-username">@${USERNAME}</div>
+        <a class="btn-github" href="https://github.com/${USERNAME}" target="_blank">🐙 VIEW ON GITHUB</a>`;
+    }
+    document.getElementById('progress-bar').classList.remove('loading');
+  }
+
+  // ── Persona ──
+  async function runPersona(){
+    const btn=document.getElementById('persona-btn'), result=document.getElementById('persona-result');
+    btn.disabled=true; btn.textContent='Analyzing...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> SCANNING COMMITS...</div>`;
+    try{
+      const res=await fetch(`/api/analyze_persona/${USERNAME}`);
+      const data=await res.json();
+      const descriptions={'🐛 The Exterminator':'Relentless bug hunter. Spends time fixing issues, patching problems, and resolving edge cases.','📚 The Documenter':'The team\'s knowledge keeper. Commits full of READMEs, docs, and cleanup.','🏛️ The Architect':'Thinks in systems. Loves to refactor, initialize projects, and build solid foundations.','🚀 The Shipper':'Ships fast and often. High-volume commit activity — keeps the product moving.','💻 The Coder':'A versatile generalist with a balanced commit style.'};
+      const icon=data.persona.split(' ')[0];
+      const label=data.persona.replace(icon+' ','');
+      result.innerHTML=`<div class="result-box"><div class="persona-card"><div class="persona-icon">${icon}</div><div><div class="persona-name">${label}</div><div class="persona-desc">${descriptions[data.persona]||'A unique developer with a distinctive coding style.'}</div></div></div></div>`;
+      btn.textContent='✓ Done'; showToast(`${icon} ${label}`);
+    }catch(e){ result.innerHTML=`<div class="error-msg">⚠ Could not analyze persona.</div>`; btn.disabled=false; btn.textContent='Run Analysis'; }
+  }
+
+  // ── AI Summary ──
+  async function runAISummary(){
+    const btn=document.getElementById('ai-btn'), result=document.getElementById('ai-result');
+    btn.disabled=true; btn.textContent='Generating...';
+    result.innerHTML=`<div class="result-box"><div class="ai-summary-card"><div class="ai-label">✨ AI SUMMARY</div><div class="skeleton skeleton-text" style="width:100%;"></div><div class="skeleton skeleton-text" style="width:90%;"></div><div class="skeleton skeleton-text" style="width:95%;"></div><div id="stream-text" style="display:none;margin-top:10px;"></div></div></div>`;
+    
+    try{
+      const res=await fetch(`/api/ai_summary/${USERNAME}`);
+      if (!res.ok) throw new Error();
+      
+      const streamText = document.getElementById('stream-text');
+      
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+          // Gemini JSON Fallback
+          const data=await res.json();
+          result.innerHTML=`<div class="result-box"><div class="ai-summary-card"><div class="ai-label">✨ GEMINI AI SUMMARY</div>${data.ai_summary}</div></div>`;
+      } else {
+          // Groq Text Streaming
+          result.innerHTML=`<div class="result-box"><div class="ai-summary-card"><div class="ai-label">⚡ GROQ LLaMA-3 SUMMARY</div><div id="stream-text"></div></div></div>`;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+          const streamContainer = document.getElementById('stream-text');
+          
+          while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              streamContainer.innerHTML += decoder.decode(value, {stream: true});
+          }
+      }
+      btn.textContent='✓ Done'; showToast('✨ Summary generated!');
+    }catch(e){ result.innerHTML=`<div class="error-msg">⚠ Could not generate summary.</div>`; btn.disabled=false; btn.textContent='Generate Summary'; }
+  }
+
+  // ── Repo Deep Dive ──
+  async function runRepoDive(){
+    const btn=document.getElementById('repos-btn'), result=document.getElementById('repos-result');
+    btn.disabled=true; btn.textContent='Loading...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> FETCHING REPOS...</div>`;
+    try{
+      const res=await fetch(`/api/repos/${USERNAME}`);
+      const data=await res.json();
+      if(!data.repos||!data.repos.length) throw new Error('No repos found.');
+      result.innerHTML=`<div class="result-box"><div class="repo-grid">${data.repos.map(r=>`
+        <div class="repo-card">
+          <div class="repo-card-name"><a href="${r.url}" target="_blank" style="color:var(--accent);text-decoration:none;">${r.name}</a></div>
+          <div class="repo-card-desc">${r.description||'No description.'}</div>
+          <div class="repo-meta">
+            ${r.language?`<span>💻 <span>${r.language}</span></span>`:''}
+            <span>⭐ <span>${r.stars.toLocaleString()}</span></span>
+            <span>🍴 <span>${r.forks}</span></span>
+            <span>📅 <span>${r.updated}</span></span>
+          </div>
+          <button onclick="viewPipeline('${USERNAME}','${r.name}','${(r.description||'').replace(/'/g,"\\'")}',this)" style="margin-top:10px;padding:6px 12px;background:transparent;border:1px solid rgba(251,191,36,0.4);border-radius:6px;cursor:pointer;font-size:10px;font-family:'Space Mono',monospace;color:#fbbf24;transition:all 0.2s;width:100%;" onmouseover="this.style.background='rgba(251,191,36,0.08)'" onmouseout="this.style.background='transparent'">🏗️ View Pipeline</button>
+        </div>`).join('')}</div></div>`;
+      btn.textContent='✓ Done'; showToast(`📁 ${data.repos.length} repos loaded`);
+    }catch(e){ result.innerHTML=`<div class="error-msg">⚠ ${e.message}</div>`; btn.disabled=false; btn.textContent='Load Repos'; }
+  }
+
+  // ── Similar Devs ──
+  async function runSimilar(){
+    const btn=document.getElementById('similar-btn'), result=document.getElementById('similar-result');
+    btn.disabled=true; btn.textContent='Searching...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> ANALYZING TECH STACK...</div>`;
+    try{
+      const res=await fetch(`/api/similar_candidates/${USERNAME}`);
+      const data=await res.json();
+      if(data.error) throw new Error(data.error);
+      const users=data.similar_users||[];
+      if(!users.length) throw new Error('No similar candidates found.');
+      result.innerHTML=`<div class="result-box"><div class="top-lang-badge">🏷️ ${data.top_language}</div><div class="similar-grid">${users.map(u=>`<a class="similar-card" href="${u.html_url||'https://github.com/'+u.login}" target="_blank"><img src="${u.avatar_url}" alt="${u.login}"/><div><div class="similar-card-name">${u.name||u.login}</div><div class="similar-card-handle">@${u.login}</div></div></a>`).join('')}</div></div>`;
+      btn.textContent='✓ Done'; showToast('👥 Similar devs found!');
+    }catch(e){ result.innerHTML=`<div class="error-msg">⚠ ${e.message}</div>`; btn.disabled=false; btn.textContent='Find Similar'; }
+  }
+
+  // ── Email Draft ──
+  async function runEmailDraft(){
+    const btn=document.getElementById('email-btn'), result=document.getElementById('email-result');
+    btn.disabled=true; btn.textContent='Drafting...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> WRITING EMAIL...</div>`;
+    try{
+      const res=await fetch(`/api/draft_email/${USERNAME}`);
+      const data=await res.json();
+      result.innerHTML=`<div class="result-box"><div class="email-box" id="email-content">${data.email}</div><button class="btn-copy-email" onclick="copyEmail()">📋 Copy Email</button></div>`;
+      btn.textContent='✓ Done'; showToast('📧 Email drafted!');
+    }catch(e){ result.innerHTML=`<div class="error-msg">⚠ Could not draft email.</div>`; btn.disabled=false; btn.textContent='Draft Email'; }
+  }
+
+  function copyEmail(){
+    const text=document.getElementById('email-content').innerText;
+    navigator.clipboard.writeText(text).then(()=>showToast('📋 Email copied!'));
+  }
+
+  // ── Pipeline / Architecture viewer (reuses /api/architecture) ──
+  async function viewPipeline(owner, repo, description, btn) {
+    // open a simple overlay — same styling as index.html arch modal
+    let overlay = document.getElementById('arch-overlay-analyze');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'arch-overlay-analyze';
+      overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:3000;align-items:center;justify-content:center;padding:16px;';
+      overlay.innerHTML = `
+        <div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:820px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,0.7);overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:9px;">
+              <span style="font-size:20px;">🏗️</span>
+              <div>
+                <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);" id="arch-a-title">Pipeline</div>
+                <div style="font-size:10px;color:var(--text-muted);font-family:'Space Mono',monospace;">AI-generated architecture</div>
+              </div>
+            </div>
+            <button onclick="document.getElementById('arch-overlay-analyze').style.display='none';document.body.style.overflow='';" style="padding:6px 13px;background:transparent;border:1px solid var(--border2);border-radius:6px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;">✕ CLOSE</button>
+          </div>
+          <div id="arch-a-body" style="flex:1;overflow-y:auto;padding:22px;"></div>
+        </div>`;
+      overlay.addEventListener('click', e => { if(e.target===overlay){ overlay.style.display='none'; document.body.style.overflow=''; }});
+      document.body.appendChild(overlay);
+    }
+
+    document.getElementById('arch-a-title').textContent = `${owner}/${repo}`;
+    document.getElementById('arch-a-body').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:50px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);"><div style="width:24px;height:24px;border:2px solid var(--border);border-top-color:#fbbf24;border-radius:50%;animation:spin 0.8s linear infinite;"></div>GEMINI IS ANALYSING THE REPO...</div>`;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    btn.disabled = true; btn.textContent = '⟳ Analysing...';
+
+    try {
+      const res  = await fetch(`/api/architecture/${owner}/${repo}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      let html = '<div style="display:flex;flex-direction:column;gap:0;">';
+      (data.stages||[]).forEach((stage, i) => {
+        const cols = stage.nodes.length <= 1 ? '1fr' : stage.nodes.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
+        html += `<div style="display:grid;grid-template-columns:${cols};gap:12px;margin-bottom:8px;">`;
+        stage.nodes.forEach(n => {
+          const colors = {input:'rgba(88,166,255,0.4)',process:'rgba(167,139,250,0.4)',model:'rgba(251,191,36,0.4)',output:'rgba(52,211,153,0.4)',infra:'rgba(248,113,133,0.4)'};
+          const bg     = {input:'rgba(88,166,255,0.05)',process:'rgba(167,139,250,0.05)',model:'rgba(251,191,36,0.05)',output:'rgba(52,211,153,0.05)',infra:'rgba(248,113,133,0.05)'};
+          const lc     = {input:'#58a6ff',process:'#c4b5fd',model:'#fbbf24',output:'#34d399',infra:'#fb7185'};
+          html += `<div style="background:${bg[n.type]||'var(--surface2)'};border:1px solid ${colors[n.type]||'var(--border)'};border-radius:10px;padding:14px 16px;">
+            <div style="font-size:20px;margin-bottom:7px;">${n.icon||'📦'}</div>
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:${lc[n.type]||'var(--text-muted)'};letter-spacing:0.1em;margin-bottom:4px;">${n.layer||''}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">${n.title||''}</div>
+            <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">${n.description||''}</div>
+            ${n.tools&&n.tools.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">${n.tools.map(t=>`<span style="padding:2px 7px;border-radius:10px;font-size:9px;font-family:'Space Mono',monospace;background:var(--accent-bg);border:1px solid var(--border2);color:var(--accent);">${t}</span>`).join('')}</div>`:''}
+          </div>`;
+        });
+        html += '</div>';
+        if (i < (data.stages||[]).length - 1) html += `<div style="text-align:center;padding:4px 0;color:var(--text-muted);font-size:16px;">↓</div>`;
+      });
+      html += '</div>';
+
+      if (data.summary) {
+        html += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:15px 17px;margin-top:18px;">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:0.12em;margin-bottom:8px;">🧠 AI ANALYSIS</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.7;">${data.summary}</div>
+          ${data.tech_stack&&data.tech_stack.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">${data.tech_stack.map(t=>`<span style="padding:3px 10px;border-radius:20px;font-size:10px;font-family:'Space Mono',monospace;border:1px solid var(--border2);color:var(--text-muted);">${t}</span>`).join('')}</div>`:''}
+        </div>`;
+      }
+
+      document.getElementById('arch-a-body').innerHTML = html;
+      showToast('🏗️ Pipeline loaded!');
+    } catch(e) {
+      document.getElementById('arch-a-body').innerHTML = `<div style="text-align:center;padding:40px;font-family:'Space Mono',monospace;font-size:12px;color:#f85149;">⚠ ${e.message||'Analysis failed. Check GEMINI_API_KEY.'}</div>`;
+    }
+    btn.disabled = false; btn.textContent = '🏗️ View Pipeline';
+  }
+
+  // ── Skill Radar ──
+  let radarChart = null;
+  async function runRadar(){
+    const btn=document.getElementById('radar-btn'), result=document.getElementById('radar-result');
+    btn.disabled=true; btn.textContent='Generating...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> ANALYSING REPOSITORIES...</div>`;
+    try{
+      const res=await fetch(`/api/skill_radar/${USERNAME}`);
+      const data=await res.json();
+      if(data.error) throw new Error(data.error);
+
+      const scores=data.scores;
+      const labels=Object.keys(scores);
+      const values=Object.values(scores);
+      const isDark=document.documentElement.getAttribute('data-theme')!=='light';
+      const accentColor= document.documentElement.getAttribute('data-theme')==='navy' ? '#64ffda' : isDark ? '#58a6ff' : '#0969da';
+
+      result.innerHTML=`
+        <div class="result-box">
+          <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;">
+            <div style="flex:1;min-width:260px;max-width:340px;margin:0 auto;">
+              <canvas id="radar-canvas" style="max-height:300px;"></canvas>
+            </div>
+            <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:10px;padding-top:10px;">
+              ${labels.map((l,i)=>{
+                const v=values[i];
+                const bar_colors=['#58a6ff','#34d399','#fbbf24','#a78bfa','#fb7185','#38bdf8'];
+                return `<div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;">
+                    <span style="color:var(--text);font-weight:500;">${l}</span>
+                    <span style="font-family:'Space Mono',monospace;font-size:10px;color:${bar_colors[i]};">${v}/100</span>
+                  </div>
+                  <div style="height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+                    <div style="height:100%;width:${v}%;background:${bar_colors[i]};border-radius:4px;transition:width 0.8s ease;"></div>
+                  </div>
+                </div>`;
+              }).join('')}
+              <div style="margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-muted);line-height:1.6;">
+                ${data.summary||''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      if(radarChart) radarChart.destroy();
+      const ctx=document.getElementById('radar-canvas').getContext('2d');
+      radarChart=new Chart(ctx,{
+        type:'radar',
+        data:{
+          labels,
+          datasets:[{
+            label:'Skill Score',
+            data:values,
+            backgroundColor:accentColor.replace(')',',0.15)').replace('rgb','rgba').replace('#','rgba(').replace(/rgba\(([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2}),/i,(m,r,g,b)=>`rgba(${parseInt(r,16)},${parseInt(g,16)},${parseInt(b,16)},`),
+            borderColor:accentColor,
+            borderWidth:2,
+            pointBackgroundColor:accentColor,
+            pointBorderColor:accentColor,
+            pointRadius:4,
+          }]
+        },
+        options:{
+          responsive:true,
+          plugins:{legend:{display:false}},
+          scales:{r:{
+            min:0,max:100,
+            ticks:{stepSize:25,color:isDark?'#8b949e':'#57606a',font:{family:'Space Mono',size:9},backdropColor:'transparent'},
+            grid:{color:isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)'},
+            pointLabels:{color:isDark?'#e2e8f0':'#1a1f2e',font:{family:'Space Mono',size:10}},
+            angleLines:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'},
+          }}
+        }
+      });
+      btn.textContent='✓ Done'; showToast('🎯 Skill radar ready!');
+    }catch(e){
+      result.innerHTML=`<div class="error-msg">⚠ ${e.message}</div>`;
+      btn.disabled=false; btn.textContent='Generate Radar';
+    }
+  }
+
+  // ── Contribution Heatmap ──
+  async function runHeatmap(){
+    const btn=document.getElementById('heatmap-btn'), result=document.getElementById('heatmap-result');
+    btn.disabled=true; btn.textContent='Loading...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> FETCHING ACTIVITY DATA...</div>`;
+    try{
+      const res=await fetch(`/api/heatmap/${USERNAME}`);
+      const data=await res.json();
+      if(!data.grid) throw new Error('No data');
+
+      const grid=data.grid;
+      const maxCount=Math.max(...grid.map(d=>d.count),1);
+
+      // group by week
+      const weeks=[];
+      let week=[];
+      // pad start so first day aligns to correct weekday
+      const firstDay=new Date(grid[0].date).getDay();
+      for(let i=0;i<firstDay;i++) week.push(null);
+      grid.forEach(d=>{
+        week.push(d);
+        if(week.length===7){ weeks.push(week); week=[]; }
+      });
+      if(week.length) weeks.push(week);
+
+      const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const days=['S','M','T','W','T','F','S'];
+
+      const intensity=c=>{
+        if(c===0) return 'var(--surface2)';
+        const p=c/maxCount;
+        if(p<0.25) return 'rgba(52,211,153,0.25)';
+        if(p<0.5)  return 'rgba(52,211,153,0.5)';
+        if(p<0.75) return 'rgba(52,211,153,0.75)';
+        return '#34d399';
+      };
+
+      let html=`
+        <div class="result-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-muted);">
+              📅 ${data.total_contributions} contributions in the last year
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:var(--text-muted);">
+              Less
+              ${[0,0.25,0.5,0.75,1].map(p=>`<div style="width:11px;height:11px;border-radius:2px;background:${p===0?'var(--surface2)':`rgba(52,211,153,${p})`};border:1px solid var(--border2);"></div>`).join('')}
+              More
+            </div>
+          </div>
+          <div style="overflow-x:auto;padding-bottom:6px;">
+            <div style="display:flex;gap:3px;min-width:fit-content;">
+              <div style="display:flex;flex-direction:column;gap:3px;margin-right:4px;padding-top:18px;">
+                ${days.map(d=>`<div style="height:11px;font-family:'Space Mono',monospace;font-size:8px;color:var(--text-muted);line-height:11px;">${d}</div>`).join('')}
+              </div>
+              ${weeks.map(w=>`
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="height:14px;"></div>
+                  ${w.map(d=>d?`
+                    <div title="${d.date}: ${d.count} commits"
+                         style="width:11px;height:11px;border-radius:2px;background:${intensity(d.count)};border:1px solid var(--border2);cursor:default;transition:transform 0.1s;"
+                         onmouseover="this.style.transform='scale(1.4)'"
+                         onmouseout="this.style.transform='scale(1)'">
+                    </div>` : `<div style="width:11px;height:11px;"></div>`).join('')}
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`;
+
+      result.innerHTML=html;
+      btn.textContent='✓ Done'; showToast('📅 Heatmap loaded!');
+    }catch(e){
+      result.innerHTML=`<div class="error-msg">⚠ Could not load heatmap. ${e.message}</div>`;
+      btn.disabled=false; btn.textContent='Load Heatmap';
+    }
+  }
+
+  // ── PDF Export ──
+  async function exportPDF(){
+    const btn=document.getElementById('pdf-btn'), result=document.getElementById('pdf-result');
+    btn.disabled=true; btn.textContent='Generating...';
+    result.innerHTML=`<div class="spinner-inline"><div class="spin-circle"></div> BUILDING PDF REPORT...</div>`;
+    try{
+      const res=await fetch(`/api/export_pdf/${USERNAME}`);
+      if(!res.ok){
+        const err=await res.json();
+        throw new Error(err.detail||'PDF generation failed');
+      }
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download=`${USERNAME}_profile.pdf`; a.click();
+      URL.revokeObjectURL(url);
+      result.innerHTML=`
+        <div class="result-box">
+          <div style="display:flex;align-items:center;gap:14px;padding:18px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
+            <div style="font-size:36px;">📄</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Report downloaded!</div>
+              <div style="font-size:12px;color:var(--text-muted);">${USERNAME}_profile.pdf includes profile, stats, and top repositories.</div>
+              <button onclick="exportPDF()" style="margin-top:10px;padding:6px 14px;background:var(--accent-bg);border:1px solid var(--accent2);border-radius:6px;color:var(--accent);font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;">⬇ Download Again</button>
+            </div>
+          </div>
+        </div>`;
+      btn.textContent='✓ Done'; showToast('📄 PDF downloaded!');
+    }catch(e){
+      result.innerHTML=`<div class="error-msg">⚠ ${e.message}. Make sure <code>reportlab</code> is installed: <code>pip install reportlab</code></div>`;
+      btn.disabled=false; btn.textContent='Download PDF';
+    }
+  }
+
+  // ── Toast ──
+  let toastTimer;
+  function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800); }
+
+  loadProfile();
+</script>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item active" href="/">
+    <i>🔍</i>
+    <span>HOME</span>
+  </a>
+  <a class="bottom-nav-item" href="/jd-match">
+    <i>🎯</i>
+    <span>JD MATCH</span>
+  </a>
+  <a class="bottom-nav-item" href="/market-trends">
+    <i>📈</i>
+    <span>TRENDS</span>
+  </a>
+  <a class="bottom-nav-item" href="/role-analyzer">
+    <i>📊</i>
+    <span>ANALYZE</span>
+  </a>
+</nav>
+
+</body>
+</html>

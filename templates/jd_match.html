@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GitPulse: JD Matcher — GitHub Talent Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:#0a0a0f; --surface:#0e0e13; --surface2:#16161d;
+      --border:#1c1c24; --border2:#2d2d39;
+      --text:#f0f0f5; --text-muted:#9494a1;
+      --accent:#58a6ff; --accent2:#1f6feb; --accent-bg:rgba(88,166,255,0.1);
+      --secondary:#9d8fff; --secondary-bg:rgba(157,143,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.5);
+      --green:#34d399; --yellow:#fbbf24; --red:#f87171; --purple:#a78bfa;
+    }
+    :root[data-theme="light"] {
+      --bg:#f8f9fc; --surface:#ffffff; --surface2:#f1f4f9;
+      --border:#e1e4e8; --border2:#d1d5da;
+      --text:#1a1a2e; --text-muted:#6a737d;
+      --accent:#0969da; --accent2:#0550ae; --accent-bg:rgba(9,105,218,0.05);
+      --secondary:#6f42c1; --secondary-bg:rgba(111,66,193,0.05);
+      --shadow:0 8px 24px rgba(149,157,165,0.12);
+      --green:#16a34a; --yellow:#d97706; --red:#dc2626; --purple:#7c3aed;
+    }
+    :root[data-theme="navy"] {
+      --bg:#0b1121; --surface:#111a2f; --surface2:#1d2943;
+      --border:#1e2d4d; --border2:#2a3b5e;
+      --text:#e6edf3; --text-muted:#8b9eb0;
+      --accent:#64ffda; --accent2:#0a85d9; --accent-bg:rgba(100,255,218,0.1);
+      --secondary:#70a1ff; --secondary-bg:rgba(112,161,255,0.1);
+      --shadow:0 12px 48px rgba(0,0,0,0.6);
+      --green:#34d399; --yellow:#fbbf24; --red:#f87171; --purple:#c4b5fd;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:all 0.3s;}
+    h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;}
+
+    /* PROGRESS BAR */
+    .progress-bar{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));z-index:9999;display:none;}
+    .progress-bar.loading{display:block;animation:progress 1.5s ease-in-out infinite;}
+    @keyframes progress{0%{transform:scaleX(0);transform-origin:left;}50%{transform:scaleX(0.6);transform-origin:left;}100%{transform:scaleX(1);transform-origin:left;opacity:0;}}
+
+    /* HEADER */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:var(--shadow/2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
+    .logo-text{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent);}
+    .header-right{display:flex;align-items:center;gap:8px;}
+    .btn-back{padding:7px 16px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+    .btn-back:hover{border-color:var(--accent);color:var(--accent);}
+    .theme-switcher{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:3px;}
+    .theme-pill{padding:4px 10px;border-radius:14px;border:none;background:transparent;color:var(--text-muted);font-size:10px;font-family:'Space Mono',monospace;cursor:pointer;transition:all 0.2s;}
+    .theme-pill.active{background:var(--accent2);color:#fff;}
+    .theme-pill:not(.active):hover{color:var(--accent);}
+
+    /* NAV */
+    .nav-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;overflow-x:auto;}
+    .nav-tab{padding:12px 18px;border:none;background:transparent;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;letter-spacing:0.05em;text-decoration:none;display:flex;align-items:center;gap:5px;}
+    .nav-tab:hover{color:var(--accent);}
+    .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+    /* PAGE HERO */
+    .page-hero{text-align:center;padding:48px 20px 32px;max-width:720px;margin:0 auto;}
+    .page-hero-icon{font-size:52px;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px var(--accent-bg));}
+    .page-hero h1{font-size:32px;font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,var(--text) 30%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .page-hero p{font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:300;}
+
+    /* MAIN */
+    main{padding-bottom:100px; max-width:920px;margin:0 auto;padding:0 20px 60px;}
+
+    /* CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px;margin-bottom:20px;box-shadow:var(--shadow);animation:fadeUp 0.35s ease;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+    .card-title{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;margin-bottom:14px;}
+
+    /* FORM */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+    @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+    label{display:block;font-size:11px;font-family:'Space Mono',monospace;color:var(--text-muted);margin-bottom:5px;letter-spacing:0.05em;}
+    input[type="text"], textarea, select{width:100%;padding:10px 13px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;}
+    input[type="text"]:focus, textarea:focus, select:focus{border-color:var(--accent);}
+    textarea{resize:vertical;min-height:160px;line-height:1.6;}
+
+    /* ROLE CHIPS */
+    .chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+    .chip{padding:5px 12px;border:1px solid var(--border2);border-radius:20px;font-size:11px;font-family:'Space Mono',monospace;color:var(--text-muted);cursor:pointer;transition:all 0.2s;user-select:none;}
+    .chip.selected{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+    .chip:hover:not(.selected){border-color:var(--accent);color:var(--accent);}
+
+    /* SUBMIT */
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 26px;background:linear-gradient(90deg,var(--accent2) 0%,var(--accent) 100%);border:none;border-radius:9px;color:#fff;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s,transform 0.15s;letter-spacing:0.05em;margin-top:4px;}
+    .btn-primary:hover:not(:disabled){opacity:0.88;transform:translateY(-1px);}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+    .btn-secondary{padding:8px 16px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:var(--text-muted);font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.2s;}
+    .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* RESULTS */
+    .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+    .results-count{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);}
+    .results-count strong{color:var(--accent);}
+
+    /* CANDIDATE CARD */
+    .candidate-card{display:flex;align-items:flex-start;gap:24px;padding:28px;background:var(--surface);border:1px solid var(--border);border-radius:24px;margin-bottom:20px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);animation:fadeUp 0.5s ease both;position:relative;overflow:hidden;}
+    .candidate-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:var(--shadow);}
+    .candidate-card::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at top right, var(--accent-bg), transparent);opacity:0;transition:opacity 0.3s;}
+    .candidate-card:hover::after{opacity:1;}
+    .candidate-rank{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:15px;font-weight:700;flex-shrink:0;position:relative;z-index:2;}
+    .rank-1{background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(251,191,36,0.05));border:1px solid rgba(251,191,36,0.6);color:#fbbf24;box-shadow:0 0 20px rgba(251,191,36,0.15);}
+    .rank-2{background:linear-gradient(135deg,rgba(163,163,163,0.15),rgba(163,163,163,0.05));border:1px solid rgba(163,163,163,0.5);color:#d1d1d1;}
+    .rank-3{background:linear-gradient(135deg,rgba(205,127,50,0.15),rgba(205,127,50,0.05));border:1px solid rgba(205,127,50,0.5);color:#cd7f32;}
+    .rank-other{background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);}
+    .candidate-avatar{width:60px;height:60px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;padding:2px;background:var(--bg);}
+    .candidate-body{flex:1;min-width:0;position:relative;z-index:2;}
+    .candidate-name{font-size:19px;font-weight:700;margin-bottom:6px;color:var(--text);font-family:'Space Grotesk',sans-serif;}
+    .candidate-login{font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);margin-bottom:12px;opacity:0.8;}
+    .candidate-bio{font-size:14px;color:var(--text-muted);line-height:1.65;margin-bottom:16px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .candidate-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;font-family:'Space Mono',monospace;color:var(--text-muted);margin-bottom:16px;}
+    .candidate-meta span{background:var(--surface2);padding:4px 12px;border-radius:8px;border:1px solid var(--border2);color:var(--text);}
+    .candidate-ai{background:var(--bg);border:1px solid var(--border2);border-radius:16px;padding:20px 24px;font-size:14px;line-height:1.75;color:var(--text-muted);}
+    .candidate-ai-label{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;display:block;}
+    .match-label{color:var(--green);font-weight:600;}
+    .gap-label{color:var(--red);font-weight:600;}
+    .score-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:9999px;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;flex-shrink:0;margin-left:auto;box-shadow:0 0 15px rgba(0,0,0,0.15);}
+    .score-high{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.5);color:var(--green);}
+    .score-mid{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.5);color:var(--yellow);}
+    .score-low{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.5);color:var(--red);}
+    .btn-view-profile{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:11px;text-decoration:none;transition:all 0.2s;font-weight:700;}
+    .btn-view-profile:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+
+    /* SPINNER */
+    .spinner-inline{display:flex;align-items:center;justify-content:center;gap:12px;padding:48px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spin-circle{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+
+    /* EMPTY/ERROR */
+    .empty-state{text-align:center;padding:48px 20px;color:var(--text-muted);}
+    .empty-icon{font-size:42px;margin-bottom:14px;}
+    .empty-state p{font-size:13px;line-height:1.65;}
+    .error-msg{color:#f85149;font-size:12px;text-align:center;padding:20px;font-family:'Space Mono',monospace;}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:11px 18px;color:var(--accent);font-family:'Space Mono',monospace;font-size:11px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);transition:all 0.3s;z-index:9999;pointer-events:none;}
+    .toast.show{opacity:1;transform:translateY(0);}
+
+    /* SAMPLE PILLS */
+    .sample-jds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+    .sample-pill{padding:4px 11px;border:1px dashed var(--border2);border-radius:20px;font-size:10px;font-family:'Space Mono',monospace;color:var(--text-muted);cursor:pointer;transition:all 0.2s;}
+    .sample-pill:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* SCORE ARC */
+    .score-arc-wrap{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+    .score-arc-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:4px;letter-spacing:0.05em;}
+  
+    /* BOTTOM NAV BAR */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,15,0.95);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 12px 10px 24px; z-index: 9999;
+    }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      color: var(--text-muted); text-decoration: none; font-size: 9px;
+      font-family: 'Space Mono', monospace; font-weight: 700;
+      transition: all 0.2s; padding: 8px 16px; border-radius: 14px;
+    }
+    .bottom-nav-item i { font-size: 20px; font-style: normal; margin-bottom: 2px; }
+    .bottom-nav-item.active { background: rgba(88,166,255,0.1); color: var(--accent); }
+    .bottom-nav-item.active i { color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress-bar"></div>
+
+<header style="background:transparent; border-bottom:none; margin-top:14px; padding:10px 24px;">
+  <div class="logo">
+    <div style="background:var(--accent-bg);padding:8px;border-radius:12px;border:1px solid var(--accent);font-size:20px;">🐙</div>
+    <div>
+      <div class="logo-text" style="font-size:16px; font-weight:700; color:var(--accent);">GitPulse</div>
+      <div class="logo-sub" style="font-size:9px;">GITHUB TALENT INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="/" class="btn-back" style="background:var(--surface2); border:none; padding:8px 14px; font-weight:700; color:var(--text); text-decoration:none; border-radius:12px;">← Go Back</a>
+  </div>
+</header>
+
+
+
+<div class="page-hero" style="padding-top:20px; padding-bottom:10px; border:none; background:transparent;">
+  <div style="display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; background:var(--surface2); border:1px solid var(--border2); margin-bottom:20px;">
+    <span style="font-size:20px;">🎯</span>
+  </div>
+  <h1 style="font-size:42px; font-weight:700; line-height:1.1; margin-bottom:16px; color:var(--text); letter-spacing:-0.03em;">
+    <span style="color:var(--accent);">JD → Ranked</span><br/>Candidates
+  </h1>
+  <p style="font-size:13px; color:var(--text-muted); max-width:320px; margin:0 auto; line-height:1.6;">
+    Precision engineering for recruitment. Our AI analyzes code contributions, commit quality, and repo velocity to rank the top 1% of talent against your specific requirements.
+  </p>
+</div>
+
+<main>
+
+  <!-- INPUT CARD -->
+  <div class="card" id="input-card">
+    <div class="card-title">📋 JOB DESCRIPTION</div>
+
+    <!-- sample JD quick-fills -->
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text-muted);margin-bottom:6px;">QUICK FILL:</div>
+      <div class="sample-jds">
+        <span class="sample-pill" onclick="fillSample('ml')">🤖 ML Engineer</span>
+        <span class="sample-pill" onclick="fillSample('fullstack')">⚡ Full-Stack Dev</span>
+        <span class="sample-pill" onclick="fillSample('devops')">🛠️ DevOps Engineer</span>
+        <span class="sample-pill" onclick="fillSample('data')">📊 Data Scientist</span>
+        <span class="sample-pill" onclick="fillSample('frontend')">🎨 Frontend Dev</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label for="jd-input" style="font-family:'Space Mono', monospace; font-size:10px; letter-spacing:0.1em; opacity:0.8;">PASTE JOB DESCRIPTION *</label>
+      <textarea id="jd-input" placeholder="Add description... e.g. Expertise in React, TypeScript, and high-performance WebGL rendering... Experience with CI/CD and large scale monorepos." style="border-radius:24px; padding:20px; font-size:14px; background:var(--surface); min-height:220px;"></textarea>
+    </div>
+
+    <div class="form-grid">
+      <div>
+        <label for="location-input">LOCATION <span style="opacity:0.5;">(optional)</span></label>
+        <input type="text" id="location-input" placeholder="e.g. San Francisco, India, Remote"/>
+      </div>
+      <div>
+        <label>TARGET ROLES <span style="opacity:0.5;">(select all that apply)</span></label>
+        <div class="chip-group" id="roles-group">
+          <span class="chip selected" data-role="software engineer">👨‍💻 Software Engineer</span>
+          <span class="chip" data-role="machine learning engineer">🤖 ML Engineer</span>
+          <span class="chip" data-role="data scientist">📊 Data Scientist</span>
+          <span class="chip" data-role="fullstack developer">⚡ Full-Stack</span>
+          <span class="chip" data-role="devops engineer">🛠️ DevOps</span>
+          <span class="chip" data-role="frontend developer">🎨 Frontend</span>
+          <span class="chip" data-role="backend developer">🔧 Backend</span>
+          <span class="chip" data-role="data engineer">🗄️ Data Engineer</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;">
+      <button class="btn-primary" id="match-btn" style="border-radius:24px; padding:18px 24px; background:rgba(88,166,255,1); flex:1;" onclick="runMatch()">
+        <span id="btn-icon">🎯</span> <span id="btn-text" style="font-family:'Space Mono', monospace; font-size:12px; letter-spacing:0.05em; font-weight:700;">Find Matching Candidates</span>
+      </button>
+      <button class="btn-secondary" onclick="clearAll()">✕ Clear</button>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-muted);margin-left:auto;">
+        Powered by <span style="color:var(--accent);">AI Engine</span> + GitHub Search
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS AREA -->
+  <div id="results-area"></div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Theme ──
+  function setTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    localStorage.setItem('gh_theme',t);
+    ['dark','navy','light'].forEach(x=>{ const el=document.getElementById('pill-'+x); if(el) el.classList.toggle('active',x===t); });
+  }
+  (()=>{ setTheme(localStorage.getItem('gh_theme')||'dark'); })();
+
+  // ── Role chips ──
+  document.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click',()=>chip.classList.toggle('selected'));
+  });
+
+  // ── Sample JD quick-fills ──
+  const SAMPLES={
+    ml:`We are looking for a Senior Machine Learning Engineer to join our AI team.
+
+Responsibilities:
+- Design, train, and deploy ML models (NLP, CV, recommendation systems)
+- Build MLOps pipelines using MLflow, Kubeflow, or similar
+- Collaborate with data engineers to ensure quality data pipelines
+- Optimize model performance for production (latency, accuracy)
+
+Requirements:
+- 3+ years Python, PyTorch or TensorFlow
+- Experience with FastAPI or Flask for model serving
+- Docker, Kubernetes for deployment
+- Familiarity with cloud platforms (AWS SageMaker, GCP Vertex AI)`,
+
+    fullstack:`Seeking a Full-Stack Developer to build scalable web applications.
+
+Responsibilities:
+- Build responsive frontends using React or Next.js
+- Develop robust REST APIs with Node.js or FastAPI
+- Design and maintain PostgreSQL / MongoDB databases
+- CI/CD pipelines with GitHub Actions and Docker
+
+Requirements:
+- 2+ years React, TypeScript
+- Backend experience with Python or Node.js
+- REST / GraphQL API design
+- Git, agile workflow`,
+
+    devops:`We need a DevOps Engineer to streamline our infrastructure and deployment pipelines.
+
+Responsibilities:
+- Manage Kubernetes clusters on AWS/GCP
+- Build and maintain CI/CD pipelines (GitHub Actions, Jenkins)
+- Infrastructure as code with Terraform and Ansible
+- Monitor systems with Prometheus, Grafana, PagerDuty
+
+Requirements:
+- Strong Linux administration
+- Docker, Kubernetes (CKA preferred)
+- Terraform or Pulumi
+- Scripting in Python or Bash`,
+
+    data:`Looking for a Data Scientist to turn large datasets into actionable insights.
+
+Responsibilities:
+- Explore and analyze complex datasets using Python and SQL
+- Build predictive models (regression, classification, clustering)
+- Create dashboards and visualizations in Tableau / Power BI
+- Collaborate with product teams to define metrics
+
+Requirements:
+- Pandas, NumPy, scikit-learn
+- Statistical modeling and A/B testing
+- SQL (PostgreSQL, BigQuery)
+- Experience with Jupyter Notebooks`,
+
+    frontend:`Hiring a Frontend Developer to craft beautiful, performant user interfaces.
+
+Responsibilities:
+- Build pixel-perfect UIs in React / Vue.js
+- Implement responsive designs from Figma specifications
+- Optimize Core Web Vitals and page performance
+- Write unit tests with Jest and Testing Library
+
+Requirements:
+- 2+ years React or Vue
+- Tailwind CSS / CSS-in-JS
+- TypeScript
+- Web performance optimization`,
+  };
+
+  function fillSample(key){
+    document.getElementById('jd-input').value=SAMPLES[key]||'';
+    // auto-select relevant chips
+    const map={ml:['machine learning engineer'],fullstack:['fullstack developer'],devops:['devops engineer'],data:['data scientist'],frontend:['frontend developer']};
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+    const roles=map[key]||['software engineer'];
+    document.querySelectorAll('.chip').forEach(c=>{ if(roles.includes(c.dataset.role)) c.classList.add('selected'); });
+    document.getElementById('jd-input').focus();
+    showToast('📋 Sample JD loaded!');
+  }
+
+  function clearAll(){
+    document.getElementById('jd-input').value='';
+    document.getElementById('location-input').value='';
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+    document.querySelector('.chip[data-role="software engineer"]').classList.add('selected');
+    document.getElementById('results-area').innerHTML='';
+  }
+
+  // ── Main match function ──
+  async function runMatch(){
+    const jd=document.getElementById('jd-input').value.trim();
+    if(!jd){ showToast('⚠️ Please paste a job description first'); return; }
+
+    const selected=[...document.querySelectorAll('.chip.selected')].map(c=>c.dataset.role);
+    if(!selected.length){ showToast('⚠️ Select at least one role'); return; }
+
+    const location=document.getElementById('location-input').value.trim();
+    const btn=document.getElementById('match-btn');
+    const icon=document.getElementById('btn-icon');
+    const txt=document.getElementById('btn-text');
+
+    btn.disabled=true; icon.textContent='⏳'; txt.textContent='Analysing with AI Engine...';
+    document.getElementById('progress-bar').classList.add('loading');
+
+    document.getElementById('results-area').innerHTML=`
+      <div class="spinner-inline">
+        <div class="spin-circle"></div>
+        GROQ IS RANKING CANDIDATES...
+      </div>`;
+
+    try{
+      const res=await fetch('/api/jd_match',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({jd,roles:selected,location}),
+      });
+      if(!res.ok){
+        const err=await res.json();
+        throw new Error(err.detail||'API error');
+      }
+      const data=await res.json();
+      renderResults(data.candidates||[], selected, location);
+      showToast(`🎯 ${data.total||0} candidates ranked!`);
+    }catch(e){
+      document.getElementById('results-area').innerHTML=`
+        <div class="card">
+          <div class="error-msg">⚠️ ${e.message}</div>
+        </div>`;
+    }finally{
+      btn.disabled=false; icon.textContent='🎯'; txt.textContent='Find Matching Candidates';
+      document.getElementById('progress-bar').classList.remove('loading');
+    }
+  }
+
+  function scoreClass(s){ return s>=70?'score-high':s>=40?'score-mid':'score-low'; }
+  function scoreEmoji(s){ return s>=70?'🟢':s>=40?'🟡':'🔴'; }
+
+  function rankClass(i){ return ['rank-1','rank-2','rank-3'][i]||'rank-other'; }
+
+  function renderResults(candidates, roles, location){
+    if(!candidates.length){
+      document.getElementById('results-area').innerHTML=`
+        <div class="card">
+          <div class="empty-state">
+            <div class="empty-icon">🔭</div>
+            <p>No candidates found for these criteria.<br>Try broadening your roles or removing the location filter.</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    let html=`
+      <div class="card">
+        <div class="results-header">
+          <div>
+            <div class="card-title">🏆 RANKED CANDIDATES</div>
+            <div class="results-count"><strong>${candidates.length}</strong> candidates scored and sorted by Gemini AI</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${roles.map(r=>`<span style="padding:3px 10px;border-radius:20px;border:1px solid var(--border2);font-size:10px;font-family:'Space Mono',monospace;color:var(--text-muted);">${r}</span>`).join('')}
+            ${location?`<span style="padding:3px 10px;border-radius:20px;border:1px solid var(--border2);font-size:10px;font-family:'Space Mono',monospace;color:var(--text-muted);">📍 ${location}</span>`:''}
+          </div>
+        </div>
+      </div>`;
+
+    candidates.forEach((c,i)=>{
+      const score=c.ai_score||0;
+      html+=`
+        <div class="candidate-card">
+          <div class="candidate-rank ${rankClass(i)}">${i+1}</div>
+          <img class="candidate-avatar" src="${c.avatar_url||`https://github.com/${c.login}.png`}" alt="${c.login}" onerror="this.src='https://github.com/github.png'"/>
+          <div class="candidate-body">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div>
+                <div class="candidate-name">${c.name||c.login}</div>
+                <div class="candidate-login">@${c.login}</div>
+              </div>
+              <div class="score-badge ${scoreClass(score)}">${scoreEmoji(score)} ${score}/100</div>
+            </div>
+            ${c.bio?`<div class="candidate-bio">${c.bio}</div>`:''}
+            <div class="candidate-meta">
+              ${c.location?`<span>📍 <span>${c.location}</span></span>`:''}
+              <span>📁 <span>${c.public_repos||0}</span> repos</span>
+              <span>👥 <span>${(c.followers||0).toLocaleString()}</span> followers</span>
+              ${c.company?`<span>🏢 <span>${c.company}</span></span>`:''}
+            </div>
+            <div class="candidate-ai">
+              ${c.match_reason?`<div class="candidate-ai-label match-label">✅ MATCH</div><div style="color:var(--text);margin-bottom:${c.gap?'10px':'0'};font-size:12px;">${c.match_reason}</div>`:''}
+              ${c.gap?`<div class="candidate-ai-label gap-label">⚠️ GAP</div><div style="color:var(--text-muted);font-size:12px;">${c.gap}</div>`:''}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+              <a class="btn-view-profile" href="https://github.com/${c.login}" target="_blank">🐙 GitHub</a>
+              <a class="btn-view-profile" href="/analyze/${c.login}" target="_blank">🔍 Deep Analyse</a>
+            </div>
+          </div>
+        </div>`;
+    });
+
+    document.getElementById('results-area').innerHTML=html;
+  }
+
+  // ── Toast ──
+  let toastTimer;
+  function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800); }
+
+  // Allow Ctrl+Enter to submit
+  document.getElementById('jd-input').addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.key==='Enter') runMatch();
+  });
+</script>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item active" href="/">
+    <i>🔍</i>
+    <span>HOME</span>
+  </a>
+  <a class="bottom-nav-item" href="/jd-match">
+    <i>🎯</i>
+    <span>JD MATCH</span>
+  </a>
+  <a class="bottom-nav-item" href="/market-trends">
+    <i>📈</i>
+    <span>TRENDS</span>
+  </a>
+  <a class="bottom-nav-item" href="/role-analyzer">
+    <i>📊</i>
+    <span>ANALYZE</span>
+  </a>
+</nav>
+
+</body>
+</html>
